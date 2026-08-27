@@ -1,44 +1,19 @@
-import { useState, useEffect } from 'react';
-import { listarPedidosYPorEstado, cambiarEstadoDelPedido } from '../api/pedidosApi';
+import { usePedidosPorEstados } from '../hooks/usePedidosPorEstados';
+import { cambiarEstadoDelPedido } from '../api/pedidosApi';
 import { Loading } from '../components/common/Loading';
 import ErrorMessage from '../components/common/ErrorMessage';
 import '../styles/RecogidaPage.css';
 import { toast } from 'sonner';
 
+
 const RecogidaPage = () => {
-  const [pedidos, setPedidos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const fetchPedidos = async () => {
-    try {
-      const [listos, pagados] = await Promise.all([
-        listarPedidosYPorEstado('LISTO'),
-        listarPedidosYPorEstado('PAGADO')
-      ]);
-      setPedidos([...listos, ...pagados]);
-      setError(null);
-    } catch (err) {
-      setError("Servidor no disponible. Inténtalo de nuevo más tarde.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPedidos();
-    const interval = setInterval(fetchPedidos, 15000);
-    return () => clearInterval(interval);
-  }, []);
+  const { pedidos, loading, error } = usePedidosPorEstados(['LISTO', 'PAGADO']);
 
   const handleAccion = async (id, estadoActual) => {
     try {
       const nuevoEstado = estadoActual === 'LISTO' ? 'PAGADO' : 'ENTREGADO';
       await cambiarEstadoDelPedido(id, { estado: nuevoEstado });
-
       toast.success(estadoActual === 'LISTO' ? '¡Pedido cobrado!' : '¡Pedido entregado con éxito!');
-
-      fetchPedidos();
     } catch (err) {
       toast.error("Error al actualizar el pedido");
     }

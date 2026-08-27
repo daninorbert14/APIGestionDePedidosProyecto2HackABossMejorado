@@ -1,30 +1,27 @@
 import { toast } from 'sonner';
 import ErrorMessage from '../components/common/ErrorMessage';
 import { Loading } from '../components/common/Loading';
-import { usePedidos } from "../hooks/usePedidos";
+import { usePedidosPorEstados } from "../hooks/usePedidosPorEstados";
 import { cambiarEstadoDelPedido } from "../api/pedidosApi";
 import { ESTADOS_PEDIDO } from "../utils/constants";
 import ListaPedidos from "../components/vistaCocina/ListaPedidos";
 import "../styles/CocinaPage.css";
 
 export default function CocinaPage() {
-  // Traemos las dos listas de pedidos, el estado de carga, errores,
+  // Traemos las listas de pedidos, el estado de carga, errores,
   // la hora del último refresco y la función para refrescar manualmente
-  const {
-    pedidosCreados,
-    pedidosEnPreparacion,
-    loading,
-    error,
-    lastUpdated,
-    refetch,
-  } = usePedidos();
+  const { pedidos, loading, error, lastUpdated, refetch } = usePedidosPorEstados(['CREADO', 'PREPARACION']);
+
+  const pedidosCreados = pedidos.filter(p => p.estado === ESTADOS_PEDIDO.CREADO);
+  const pedidosEnPreparacion = pedidos.filter(p => p.estado === ESTADOS_PEDIDO.PREPARACION);
 
   // Avanza el estado de un pedido al siguiente paso:
   // CREADO → PREPARACION → LISTO
-  // Comprueba en qué lista está el pedido para saber a qué estado mandarlo
-  async function handleAvanzar(pedidoId) {
-    const estaCreado = pedidosCreados.some((p) => p.id === pedidoId);
-    const nuevoEstado = estaCreado ? ESTADOS_PEDIDO.PREPARACION : ESTADOS_PEDIDO.LISTO;
+  // Filtra por estado del objeto pedido
+  async function handleAvanzar(pedidoId, estadoActual) {
+    const nuevoEstado = estadoActual === ESTADOS_PEDIDO.CREADO
+      ? ESTADOS_PEDIDO.PREPARACION
+      : ESTADOS_PEDIDO.LISTO;
     try {
       await cambiarEstadoDelPedido(pedidoId, { estado: nuevoEstado });
       toast.success("Estado actualizado");

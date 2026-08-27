@@ -1,16 +1,16 @@
 import { API_URL } from "../utils/constants";
+import { fetchJSON } from "./fetchHelper";
 
 const PRODUCTOS_URL = `${API_URL}/productos`;
 
-export async function crearProducto(dto) {
-    const response = await fetch(PRODUCTOS_URL, {
+// Sin usar
+/* export async function crearProducto(dto) {
+    return fetchJSON(PRODUCTOS_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dto)
     });
-
-    return response.json();
-}
+} */
 
 export async function listarProductos(activo, categoriaId, orden, tipoOrden) {
     // Con URLSearcParams se construyen query params automáticamente: 
@@ -28,24 +28,21 @@ export async function listarProductos(activo, categoriaId, orden, tipoOrden) {
     // Ejemplo con filtros:  http://localhost:8080/api/productos?activo=true&orden=precio
     // Ejemplo sin filtros:  http://localhost:8080/api/productos
     const url = params.toString() ? `${PRODUCTOS_URL}?${params}` : PRODUCTOS_URL;
-    const response = await fetch(url);
 
-    return response.json();
+    return fetchJSON(url);
 }
 
-export async function actualizarProducto(id, dto) {
-    const response = await fetch(`${PRODUCTOS_URL}/${id}`, {
+// Sin usar
+/* export async function actualizarProducto(id, dto) {
+    return fetchJSON(`${PRODUCTOS_URL}/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dto)
     });
+} */
 
-    return response.json();
-}
-
-export async function cambiarEstadoDeProducto(id, activo) {
-    const response = await fetch(`${PRODUCTOS_URL}/${id}/estado?activo=${activo}`,
+// Sin usar
+/* export async function cambiarEstadoDeProducto(id, activo) {
+    return fetchJSON(`${PRODUCTOS_URL}/${id}/estado?activo=${activo}`,
         { method: "PATCH" });
-
-    return response.json();
-}
+} */

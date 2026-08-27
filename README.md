@@ -138,32 +138,6 @@ Ejemplo de mensaje mostrado:
 
 > Servidor no disponible. Inténtalo de nuevo más tarde.
 
-## Capturas de la aplicación
-
-### Selección de terminal
-
-![Selección de terminal](docs/seleccion-terminal.png)
-
-Pantalla inicial donde el usuario selecciona la terminal desde la que va a registrar los pedidos.
-
-### Vista Terminal
-
-![Vista Terminal](docs/terminal.png)
-
-Permite seleccionar productos, gestionar el carrito y crear nuevos pedidos.
-
-### Vista Cocina
-
-![Vista Cocina](docs/cocina.png)
-
-Permite gestionar los pedidos pendientes y avanzar su estado de preparación.
-
-### Vista Recogida
-
-![Vista Recogida](docs/recogida.png)
-
-Permite cobrar y entregar los pedidos completando el flujo de trabajo.
-
 ## Configuración del proyecto
 
 La aplicación consume la API REST desarrollada en el Proyecto I.
@@ -202,13 +176,19 @@ npm run dev
 npm run build
 ```
 
-## Mejoras futuras
+## Suposiciones y limitaciones
 
-Funcionalidades identificadas como posibles mejoras para futuras iteraciones:
+* No se implementa autenticación — todos los roles (terminal, cocina, recogida) son accesibles sin login.
+* La gestión del catálogo de productos y categorías se realiza directamente desde el backend o Swagger, no desde el frontend.
+* El frontend depende de que la API backend esté disponible en todo momento.
+* Las validaciones de negocio se realizan exclusivamente en el backend.
+* No existe persistencia local — si se recarga la página, la terminal seleccionada y el carrito se pierden.
+* No se diferencia entre errores HTTP (400, 404, 500) — todos muestran el mismo mensaje genérico.
 
-* Integración con autenticación JWT.
-* Gestión de usuarios y roles.
-* Persistencia de la terminal seleccionada mediante LocalStorage.
+## Posibles mejoras
+
+* Integración con autenticación JWT y gestión de usuarios y roles.
+* Persistencia de la terminal seleccionada mediante localStorage.
 * Dashboard con estadísticas de ventas.
 * Tests unitarios con Vitest.
 * Paginación de listados.

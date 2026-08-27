@@ -8,7 +8,7 @@ export default function PedidoCard({ pedido, onAvanzar }) {
   async function handleAvanzar() {
     setAdvancing(true);
     try {
-      await onAvanzar(pedido.id);
+      await onAvanzar(pedido.id, pedido.estado);
     } finally {
       setAdvancing(false);
     }

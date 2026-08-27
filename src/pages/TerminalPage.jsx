@@ -108,12 +108,7 @@ const TerminalPage = () => {
       // 3. Una sola llamada crea el pedido con todos sus productos
       const pedidoCreado = await registrarPedido(dto);
 
-      // 4. Comprobación de seguridad por si el backend devuelve un error de validación
-      if (pedidoCreado.error || pedidoCreado.detalles) {
-        throw new Error(pedidoCreado.detalles ? pedidoCreado.detalles.join(", ") : "Datos inválidos");
-      }
-
-      // 5. Mostramos el código generado, que el cliente usará para recoger su pedido
+      // 4. Mostramos el código generado, que el cliente usará para recoger su pedido
       toast.success(`¡Pedido enviado! Código: ${pedidoCreado.codigo}`);
 
       setCarrito([]); // vaciamos el carrito para el siguiente cliente
