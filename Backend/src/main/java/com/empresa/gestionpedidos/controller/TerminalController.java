@@ -4,7 +4,7 @@ import com.empresa.gestionpedidos.dto.CrearTerminalDto;
 import com.empresa.gestionpedidos.dto.TerminalDto;
 import com.empresa.gestionpedidos.service.TerminalService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,9 +13,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/terminales")
+@RequiredArgsConstructor // Lombok genera el constructor con los campos final
 public class TerminalController {
-    @Autowired
-    private TerminalService terminalService;
+    private final TerminalService terminalService;
 
     @GetMapping
     public ResponseEntity<List<TerminalDto>> listarTerminales() {

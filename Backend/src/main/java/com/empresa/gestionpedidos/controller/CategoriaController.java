@@ -4,7 +4,7 @@ import com.empresa.gestionpedidos.dto.CategoriaDto;
 import com.empresa.gestionpedidos.dto.CrearCategoriaDto;
 import com.empresa.gestionpedidos.service.CategoriaService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +14,9 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/categorias")
+@RequiredArgsConstructor // Lombok genera el constructor con los campos final
 public class CategoriaController {
-    @Autowired
-    private CategoriaService categoriaService;
+    private final CategoriaService categoriaService;
 
     @PostMapping
     public ResponseEntity<Map<String, Object>> crearCategoria(@Valid @RequestBody CrearCategoriaDto nuevaCategoriaDto) {

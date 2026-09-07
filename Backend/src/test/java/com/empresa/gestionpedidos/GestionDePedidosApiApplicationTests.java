@@ -1,4 +1,4 @@
-package com.example.gestion_de_pedidos_api;
+package com.empresa.gestionpedidos;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

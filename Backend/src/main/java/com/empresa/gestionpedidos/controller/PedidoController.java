@@ -4,7 +4,7 @@ import com.empresa.gestionpedidos.dto.*;
 import com.empresa.gestionpedidos.model.EstadoPedido;
 import com.empresa.gestionpedidos.service.PedidoService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,9 +13,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/pedidos")
+@RequiredArgsConstructor // Lombok genera el constructor con los campos final
 public class PedidoController {
-    @Autowired
-    private PedidoService pedidoService;
+    private final PedidoService pedidoService;
 
     @PostMapping
     public ResponseEntity<PedidoDto> registrarNuevoPedido(@Valid @RequestBody CrearPedidoDto crearPedidoDto) {

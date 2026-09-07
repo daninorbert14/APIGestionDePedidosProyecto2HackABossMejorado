@@ -24,7 +24,7 @@ public class PedidoService {
     private final ProductoRepository productoRepository;
     private final TerminalRepository terminalRepository;
 
-    //Método listar todos los pedidos
+    // Método para listar todos los pedidos
     public List<PedidoDto> listarPedidos(EstadoPedido estado) {
         List<Pedido> pedidos;
 
@@ -40,53 +40,51 @@ public class PedidoService {
                 .toList();
     }
 
-    //Método registrar un pedido
-    //Devuelve PedidoDto para no mostrar todos los datos sensibles
-    //Recibe CrearPedidoDto
+    // Método para registrar un pedido. Devuelve PedidoDto para no mostrar todos los datos sensibles
     public PedidoDto registrarPedido(CrearPedidoDto crearPedidoDto) {
-        Pedido nuevoPedido = new Pedido();//Creamos un nuevo pedido y ahora lo armamos con los Dto
-        //Asi sabemos el id de la terminal usada
+        Pedido nuevoPedido = new Pedido();// Creamos un nuevo pedido y ahora lo armamos con los Dto
+        // Así sabemos el id de la terminal usada
         Terminal terminalUsada = obtenerIdTerminal(crearPedidoDto.getTerminalId());
 
-        nuevoPedido.setCodigo("PED-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase()); //Genera un código único
+        nuevoPedido.setCodigo("PED-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase()); // Genera un código único
         nuevoPedido.setFecha(LocalDateTime.now());
         nuevoPedido.setTerminal(terminalUsada);
 
-        List<PedidoProducto> lineasPedido = new ArrayList<>();//creamos la lista de lineas de pedido
+        List<PedidoProducto> lineasPedido = new ArrayList<>();// Creamos la lista de lineas de pedido
 
 
-        //Recorremos el Map que contiene la info de qué productos y cuantos compra el cliente
+        // Recorremos el Map que contiene la info de qué productos y cuantos compra el cliente
         for (Map.Entry<Long, Integer> entry : crearPedidoDto.getProductosComprados().entrySet()) {
             Long productoCompradoId = entry.getKey();//Obtenemos el id
             Integer cantidadCompradaProducto = entry.getValue();//Obtenemos la cantidad
 
-            //Nos cercioramos de que el producto con ese Id exista
+            // Nos cercioramos de que el producto con ese Id exista
             Producto productoComprado = obtenerProductoPorId(productoCompradoId);
 
-            //Validar que el producto esté activo
+            // Validar que el producto esté activo
             validarProductoActivo(productoComprado);
 
-            //Creamos una lineaPedido que hay que agregarle a la lista de líneas de pedido
+            // Creamos una lineaPedido que hay que agregarle a la lista de líneas de pedido
             PedidoProducto lineaPedido = new PedidoProducto();
 
-            //Sacamos los datos para añadirlos a la lineaPedido
+            // Sacamos los datos para añadirlos a la lineaPedido
             lineaPedido.setCantidad(cantidadCompradaProducto);
             lineaPedido.setPrecioUnitario(productoComprado.getPrecio());
             lineaPedido.setPedido(nuevoPedido);
             lineaPedido.setProducto(productoComprado);
 
 
-            //Añadimos la lineaPedido a la lista de lineasPedido creada arriba
+            // Añadimos la lineaPedido a la lista de lineasPedido creada arriba
             lineasPedido.add(lineaPedido);
 
         }
-        //Aquí se añaden todas las líneas de pedido al Pedido
+        // Aquí se añaden todas las líneas de pedido al Pedido
         nuevoPedido.setLineasPedido(lineasPedido);
-        //Cuando el pedido tiene sus productos calculamos el total mediante el metodo
+        // Cuando el pedido tiene sus productos calculamos el total mediante el metodo
         nuevoPedido.setTotal(calcularTotalDelPedido(nuevoPedido));
         nuevoPedido.setEstadoPedido(EstadoPedido.CREADO);
 
-        //Guardamos el pedido en el repositorio
+        // Guardamos el pedido en el repositorio
         Pedido pedidoGuardado = pedidoRepository.save(nuevoPedido);
 
         // Este pedidoGuardado es el que mapeamos y devolvemos porque ya tiene id al guardarlo en la bbdd
@@ -229,7 +227,7 @@ public class PedidoService {
 
     // *** MÉTODOS DE MAPEO ***
 
-    //Método para transformar un Pedido en PedidoDto
+    // Método para transformar un Pedido en PedidoDto
     private PedidoDto pedidoToPedidoDto(Pedido pedido) {
         PedidoDto pedidoDto = new PedidoDto();
         pedidoDto.setId(pedido.getId());

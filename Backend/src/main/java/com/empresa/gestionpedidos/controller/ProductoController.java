@@ -4,7 +4,7 @@ import com.empresa.gestionpedidos.dto.CrearProductoDto;
 import com.empresa.gestionpedidos.dto.ProductoDto;
 import com.empresa.gestionpedidos.service.ProductoService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,10 +14,9 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/productos")
+@RequiredArgsConstructor // Lombok genera el constructor con los campos final
 public class ProductoController {
-
-    @Autowired
-    private ProductoService productoService;
+    private final ProductoService productoService;
 
     // Crear
     @PostMapping
