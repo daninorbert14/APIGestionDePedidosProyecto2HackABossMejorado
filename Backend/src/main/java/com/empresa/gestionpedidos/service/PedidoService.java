@@ -44,14 +44,13 @@ public class PedidoService {
     public PedidoDto registrarPedido(CrearPedidoDto crearPedidoDto) {
         Pedido nuevoPedido = new Pedido();// Creamos un nuevo pedido y ahora lo armamos con los Dto
         // Así sabemos el id de la terminal usada
-        Terminal terminalUsada = obtenerIdTerminal(crearPedidoDto.getTerminalId());
+        Terminal terminalUsada = obtenerTerminalPorId(crearPedidoDto.getTerminalId());
 
         nuevoPedido.setCodigo("PED-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase()); // Genera un código único
         nuevoPedido.setFecha(LocalDateTime.now());
         nuevoPedido.setTerminal(terminalUsada);
 
         List<PedidoProducto> lineasPedido = new ArrayList<>();// Creamos la lista de lineas de pedido
-
 
         // Recorremos el Map que contiene la info de qué productos y cuantos compra el cliente
         for (Map.Entry<Long, Integer> entry : crearPedidoDto.getProductosComprados().entrySet()) {
@@ -73,7 +72,6 @@ public class PedidoService {
             lineaPedido.setPedido(nuevoPedido);
             lineaPedido.setProducto(productoComprado);
 
-
             // Añadimos la lineaPedido a la lista de lineasPedido creada arriba
             lineasPedido.add(lineaPedido);
 
@@ -89,7 +87,6 @@ public class PedidoService {
 
         // Este pedidoGuardado es el que mapeamos y devolvemos porque ya tiene id al guardarlo en la bbdd
         return pedidoToPedidoDto(pedidoGuardado);
-
     }
 
     // Añadir productos a un pedido (creacion de PedidoProducto)
@@ -138,7 +135,7 @@ public class PedidoService {
         PedidoProducto linea = pedido.getLineasPedido().stream()
                 .filter(pp -> pp.getProducto().getId().equals(productoId))
                 .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("El producto con id " + productoId + " no está en el pedido"));
+                .orElseThrow(() -> new ResourceNotFoundException("El producto con ID " + productoId + " no está en el pedido"));
 
         if (cantidad >= linea.getCantidad()) {
             // eliminar toda la línea
@@ -164,18 +161,11 @@ public class PedidoService {
         return pedidoToPedidoDto(pedido);
     }
 
-    // Calculo del total del pedido
-    public BigDecimal calcularTotalDelPedido(Pedido pedido) {
-        return pedido.getLineasPedido().stream()
-                .map(pp -> pp.getPrecioUnitario().multiply(BigDecimal.valueOf(pp.getCantidad())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(2, RoundingMode.HALF_UP);
-    }
 
     // Gestion del cambio de estados de un pedido
     public PedidoDto gestionarEstadoDelPedido(Long idPedido, EstadoPedido nuevoEstado) {
         Pedido pedido = pedidoRepository.findById(idPedido)
-                .orElseThrow(() -> new ResourceNotFoundException("Pedido con id " + idPedido + " no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido con ID " + idPedido + " no encontrado"));
 
         // Validar transición de estado
         EstadoPedido estadoActual = pedido.getEstadoPedido();
@@ -200,16 +190,22 @@ public class PedidoService {
         return pedidoToPedidoDto(pedido);
     }
 
-    private Pedido obtenerPedidoPorId(Long idPedido) {
-        return pedidoRepository.findById(idPedido)
+    private Terminal obtenerTerminalPorId(Long terminalID) {
+        return terminalRepository.findById(terminalID)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Pedido con id " + idPedido + " no encontrado"));
+                        "La terminal con ID " + terminalID + " no existe"));
     }
 
     private Producto obtenerProductoPorId(Long idProducto) {
         return productoRepository.findById(idProducto)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Producto con id " + idProducto + " no encontrado"));
+                        "Producto con ID " + idProducto + " no encontrado"));
+    }
+
+    private Pedido obtenerPedidoPorId(Long idPedido) {
+        return pedidoRepository.findById(idPedido)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Pedido con ID " + idPedido + " no encontrado"));
     }
 
     private void validarProductoActivo(Producto producto) {
@@ -219,10 +215,12 @@ public class PedidoService {
         }
     }
 
-    private Terminal obtenerIdTerminal(Long terminalID) {
-        return terminalRepository.findById(terminalID)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "La terminal con id " + terminalID + " no existe"));
+    // Calculo del total del pedido
+    public BigDecimal calcularTotalDelPedido(Pedido pedido) {
+        return pedido.getLineasPedido().stream()
+                .map(pp -> pp.getPrecioUnitario().multiply(BigDecimal.valueOf(pp.getCantidad())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
     }
 
     // *** MÉTODOS DE MAPEO ***
