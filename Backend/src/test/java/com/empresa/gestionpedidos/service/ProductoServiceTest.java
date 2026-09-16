@@ -34,19 +34,42 @@ class ProductoServiceTest {
     @InjectMocks
     private ProductoService productoService;
 
+    // *** MÉTODOS FACTORÍA ***
+
+    private Categoria crearCategoria(Long id, String nombre) {
+        Categoria categoria = new Categoria();
+        categoria.setId(id);
+        categoria.setNombre(nombre);
+        return categoria;
+    }
+
+    private Producto crearProducto(Long id, String nombre, String precio, boolean activo, Categoria categoria) {
+        Producto producto = new Producto();
+        producto.setId(id);
+        producto.setNombre(nombre);
+        producto.setPrecio(new BigDecimal(precio));
+        producto.setActivo(activo);
+        producto.setCategoria(categoria);
+        return producto;
+    }
+
+    private CrearProductoDto crearProductoDto(String nombre, String precio, boolean activo, Long categoriaId) {
+        CrearProductoDto dto = new CrearProductoDto();
+        dto.setNombre(nombre);
+        dto.setPrecio(new BigDecimal(precio));
+        dto.setActivo(activo);
+        dto.setCategoriaId(categoriaId);
+        return dto;
+    }
+
+    // *** TESTS ***
+
     // Test caso de éxito del método crearProducto
     @Test
     void crearProductoDeberiaGuardarloCuandoNombreNoExiste() {
-        // Arrange: preparamos los datos de entrada y le decimos a los mocks qué responder
-        CrearProductoDto dto = new CrearProductoDto();
-        dto.setNombre("Hamburguesa clásica");
-        dto.setPrecio(new BigDecimal("8.50"));
-        dto.setActivo(true);
-        dto.setCategoriaId(1L);
-
-        Categoria categoria = new Categoria();
-        categoria.setId(1L);
-        categoria.setNombre("Hamburguesas");
+        // Arrange
+        Categoria categoria = crearCategoria(1L, "Hamburguesas");
+        CrearProductoDto dto = crearProductoDto("Hamburguesa clásica", "8.50", true, categoria.getId());
 
         when(productoRepository.existsByNombre(dto.getNombre())).thenReturn(false);
         when(categoriaRepository.findById(categoria.getId())).thenReturn(Optional.of(categoria));
@@ -58,10 +81,10 @@ class ProductoServiceTest {
             return p;
         });
 
-        // Act: llamamos al método real que estamos probando
+        // Act
         ProductoDto resultado = productoService.crearProducto(dto);
 
-        // Assert: comprobamos que el resultado es el esperado
+        // Assert
         assertThat(resultado.getNombre()).isEqualTo(dto.getNombre());
         assertThat(resultado.getPrecio()).isEqualByComparingTo(dto.getPrecio());
         assertThat(resultado.getNombreCategoria()).isEqualTo(categoria.getNombre());
@@ -71,20 +94,14 @@ class ProductoServiceTest {
     // Test caso de error del método crearProducto. Nombre ya existente
     @Test
     void crearProductoDeberiaLanzarExcepcionCuandoNombreYaExiste() {
-        CrearProductoDto dto = new CrearProductoDto();
-        dto.setNombre("Hamburguesa clásica");
-        dto.setPrecio(new BigDecimal("8.50"));
-        dto.setActivo(true);
-        dto.setCategoriaId(1L);
+        CrearProductoDto dto = crearProductoDto("Hamburguesa clásica", "8.50", true, 1L);
 
         when(productoRepository.existsByNombre(dto.getNombre())).thenReturn(true);
 
         assertThatThrownBy(() -> productoService.crearProducto(dto))
                 .isInstanceOf(PedidoStateException.class)
-                // Los mensajes de las excepciones se copian literalmente del Service
                 .hasMessageContaining("Ya existe un producto con el nombre");
 
-        // Verificamos que, al fallar la validación, nunca se llega a guardar nada
         verify(productoRepository, never()).save(any());
     }
 
@@ -92,36 +109,17 @@ class ProductoServiceTest {
     @Test
     void listarProductosDeberiaFiltrarPorActivoYCategoria() {
         // Arrange
-        Categoria hamburguesas = new Categoria();
-        hamburguesas.setId(1L);
-        hamburguesas.setNombre("Hamburguesas");
+        Categoria hamburguesas = crearCategoria(1L, "Hamburguesas");
+        Categoria bebidas = crearCategoria(2L, "Bebidas");
 
-        Categoria bebidas = new Categoria();
-        bebidas.setId(2L);
-        bebidas.setNombre("Bebidas");
-
-        Producto p1 = new Producto();
-        p1.setNombre("Hamburguesa clásica");
-        p1.setPrecio(new BigDecimal("8.50"));
-        p1.setActivo(true);
-        p1.setCategoria(hamburguesas);
-
-        Producto p2 = new Producto();
-        p2.setNombre("Hamburguesa vegana");
-        p2.setPrecio(new BigDecimal("9.50"));
-        p2.setActivo(false); // inactivo: no debería aparecer
-        p2.setCategoria(hamburguesas);
-
-        Producto p3 = new Producto();
-        p3.setNombre("Coca-Cola");
-        p3.setPrecio(new BigDecimal("2.00"));
-        p3.setActivo(true);
-        p3.setCategoria(bebidas); // otra categoría: no debería aparecer
+        Producto p1 = crearProducto(1L, "Hamburguesa clásica", "8.50", true, hamburguesas);
+        Producto p2 = crearProducto(2L, "Hamburguesa vegana", "9.50", false, hamburguesas); // inactivo: no debería aparecer
+        Producto p3 = crearProducto(3L, "Coca-Cola", "2.00", true, bebidas); // otra categoría: no debería aparecer
 
         when(productoRepository.findAll()).thenReturn(List.of(p1, p2, p3));
 
         // Act: pedimos solo los activos de la categoría 1 (Hamburguesas)
-        List<ProductoDto> resultado = productoService.listarProductos(true, 1L, null, null);
+        List<ProductoDto> resultado = productoService.listarProductos(true, hamburguesas.getId(), null, null);
 
         // Assert
         assertThat(resultado).hasSize(1);
@@ -131,17 +129,8 @@ class ProductoServiceTest {
     // Test listarProductos: ordena por precio ascendente por defecto
     @Test
     void listarProductosDeberiaOrdenarPorPrecioAscendentePorDefecto() {
-        Producto barato = new Producto();
-        barato.setNombre("Patatas");
-        barato.setPrecio(new BigDecimal("3.00"));
-        barato.setActivo(true);
-        barato.setCategoria(new Categoria());
-
-        Producto caro = new Producto();
-        caro.setNombre("Menú completo");
-        caro.setPrecio(new BigDecimal("15.00"));
-        caro.setActivo(true);
-        caro.setCategoria(new Categoria());
+        Producto barato = crearProducto(1L, "Patatas", "3.00", true, crearCategoria(1L, "Snacks"));
+        Producto caro = crearProducto(2L, "Menú completo", "15.00", true, crearCategoria(2L, "Menús"));
 
         // Los devolvemos "desordenados" a propósito, para comprobar que el método sí ordena
         when(productoRepository.findAll()).thenReturn(List.of(caro, barato));
@@ -149,58 +138,35 @@ class ProductoServiceTest {
         List<ProductoDto> resultado = productoService.listarProductos(null, null, "precio", null);
 
         assertThat(resultado).extracting(ProductoDto::getNombre)
-                .containsExactly("Patatas", "Menú completo");
+                .containsExactly(barato.getNombre(), caro.getNombre());
     }
 
     // Test listarProductos: ordena por precio, pero en descendente cuando se pide DESC
     @Test
     void listarProductosDeberiaOrdenarPorPrecioDescendenteCuandoSePide() {
-        Producto barato = new Producto();
-        barato.setNombre("Patatas");
-        barato.setPrecio(new BigDecimal("3.00"));
-        barato.setActivo(true);
-        barato.setCategoria(new Categoria());
-
-        Producto caro = new Producto();
-        caro.setNombre("Menú completo");
-        caro.setPrecio(new BigDecimal("15.00"));
-        caro.setActivo(true);
-        caro.setCategoria(new Categoria());
+        Producto barato = crearProducto(1L, "Patatas", "3.00", true, crearCategoria(1L, "Snacks"));
+        Producto caro = crearProducto(2L, "Menú completo", "15.00", true, crearCategoria(2L, "Menús"));
 
         when(productoRepository.findAll()).thenReturn(List.of(barato, caro));
 
         List<ProductoDto> resultado = productoService.listarProductos(null, null, "precio", "DESC");
 
         assertThat(resultado).extracting(ProductoDto::getNombre)
-                .containsExactly("Menú completo", "Patatas");
+                .containsExactly(caro.getNombre(), barato.getNombre());
     }
 
     // Test caso de éxito del método actualizarProducto
     @Test
     void actualizarProductoDeberiaGuardarloCuandoIdExiste() {
-        // Datos "nuevos" que llegan en el DTO para actualizar
-        CrearProductoDto dto = new CrearProductoDto();
-        dto.setNombre("Hamburguesa premium");
-        dto.setPrecio(new BigDecimal("12.50"));
-        dto.setActivo(true);
-        dto.setCategoriaId(1L);
-
         // El producto tal y como estaba guardado ANTES de la actualización
-        Categoria categoriaAntigua = new Categoria();
-        categoriaAntigua.setId(2L);
-        categoriaAntigua.setNombre("Sándwiches");
-
-        Producto productoExistente = new Producto();
-        productoExistente.setId(1L);
-        productoExistente.setNombre("Hamburguesa clásica");
-        productoExistente.setPrecio(new BigDecimal("8.50"));
-        productoExistente.setActivo(true);
-        productoExistente.setCategoria(categoriaAntigua);
+        Categoria categoriaAntigua = crearCategoria(2L, "Sándwiches");
+        Producto productoExistente = crearProducto(1L, "Hamburguesa clásica", "8.50", true, categoriaAntigua);
 
         // La categoría que el DTO pide como NUEVA categoría
-        Categoria categoriaNueva = new Categoria();
-        categoriaNueva.setId(1L);
-        categoriaNueva.setNombre("Hamburguesas");
+        Categoria categoriaNueva = crearCategoria(1L, "Hamburguesas");
+
+        // Datos "nuevos" que llegan en el DTO para actualizar
+        CrearProductoDto dto = crearProductoDto("Hamburguesa premium", "12.50", true, categoriaNueva.getId());
 
         when(productoRepository.findById(productoExistente.getId())).thenReturn(Optional.of(productoExistente));
         when(categoriaRepository.findById(dto.getCategoriaId())).thenReturn(Optional.of(categoriaNueva));
@@ -214,21 +180,17 @@ class ProductoServiceTest {
         verify(productoRepository).save(any(Producto.class));
     }
 
-
     // Test caso de error del método actualizarProducto. ID inexistente
     @Test
     void actualizarProductoDeberiaLanzarExcepcionCuandoIdNoExiste() {
-        CrearProductoDto dto = new CrearProductoDto();
-        dto.setNombre("Hamburguesa clásica");
-        dto.setPrecio(new BigDecimal("8.50"));
-        dto.setActivo(true);
-        dto.setCategoriaId(1L);
+        Long id = 1L;
+        CrearProductoDto dto = crearProductoDto("Hamburguesa clásica", "8.50", true, 1L);
 
         /* En los tests de "caso de error", el mock siempre debe simular el mismo id/nombre que usa el Act
         devolviendo el valor "vacío" correspondiente (Optional.empty(), false, etc.) — nunca un id distinto al que se llama */
-        when(productoRepository.findById(1L)).thenReturn(Optional.empty());
+        when(productoRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> productoService.actualizarProducto(1L, dto))
+        assertThatThrownBy(() -> productoService.actualizarProducto(id, dto))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Producto no encontrado");
 
@@ -240,12 +202,10 @@ class ProductoServiceTest {
     void cambiarEstadoDeberiaCambiarloCuandoExiste() {
         boolean nuevoEstado = false; // lo desactivamos, para que el cambio sea visible
 
-        Producto producto = new Producto();
-        producto.setId(1L);
-        producto.setActivo(true); // estado inicial: activo
+        Producto producto = crearProducto(1L, "Hamburguesa clásica", "8.50", true, null); // estado inicial: activo
 
         when(productoRepository.findById(producto.getId())).thenReturn(Optional.of(producto));
-        /* El objeto esparado por save() ya existe como variable creada antes del Act entonces se usa thenReturn */
+        /* El objeto esperado por save() ya existe como variable creada antes del Act, entonces se usa thenReturn */
         when(productoRepository.save(any(Producto.class))).thenReturn(producto);
 
         productoService.cambiarEstado(producto.getId(), nuevoEstado);
@@ -258,11 +218,12 @@ class ProductoServiceTest {
     // Test caso de error del método cambiarEstado
     @Test
     void cambiarEstadoDeberiaLanzarExcepcionCuandoNoExiste() {
+        Long id = 1L;
         boolean activo = true;
 
-        when(productoRepository.findById(1L)).thenReturn(Optional.empty());
+        when(productoRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> productoService.cambiarEstado(1L, activo))
+        assertThatThrownBy(() -> productoService.cambiarEstado(id, activo))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("no encontrado");
 
