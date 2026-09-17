@@ -100,7 +100,7 @@ class ProductoServiceTest {
 
         assertThatThrownBy(() -> productoService.crearProducto(dto))
                 .isInstanceOf(PedidoStateException.class)
-                .hasMessageContaining("Ya existe un producto con el nombre");
+                .hasMessageContaining("Ya existe un producto con el nombre: " + dto.getNombre());
 
         verify(productoRepository, never()).save(any());
     }
@@ -160,7 +160,7 @@ class ProductoServiceTest {
     void actualizarProductoDeberiaGuardarloCuandoIdExiste() {
         // El producto tal y como estaba guardado ANTES de la actualización
         Categoria categoriaAntigua = crearCategoria(2L, "Sándwiches");
-        Producto productoExistente = crearProducto(1L, "Hamburguesa clásica", "8.50", true, categoriaAntigua);
+        Producto producto = crearProducto(1L, "Hamburguesa clásica", "8.50", true, categoriaAntigua);
 
         // La categoría que el DTO pide como NUEVA categoría
         Categoria categoriaNueva = crearCategoria(1L, "Hamburguesas");
@@ -168,11 +168,11 @@ class ProductoServiceTest {
         // Datos "nuevos" que llegan en el DTO para actualizar
         CrearProductoDto dto = crearProductoDto("Hamburguesa premium", "12.50", true, categoriaNueva.getId());
 
-        when(productoRepository.findById(productoExistente.getId())).thenReturn(Optional.of(productoExistente));
+        when(productoRepository.findById(producto.getId())).thenReturn(Optional.of(producto));
         when(categoriaRepository.findById(dto.getCategoriaId())).thenReturn(Optional.of(categoriaNueva));
         when(productoRepository.save(any(Producto.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ProductoDto resultado = productoService.actualizarProducto(productoExistente.getId(), dto);
+        ProductoDto resultado = productoService.actualizarProducto(producto.getId(), dto);
 
         assertThat(resultado.getNombre()).isEqualTo(dto.getNombre());
         assertThat(resultado.getPrecio()).isEqualByComparingTo(dto.getPrecio());
@@ -180,9 +180,9 @@ class ProductoServiceTest {
         verify(productoRepository).save(any(Producto.class));
     }
 
-    // Test caso de error del método actualizarProducto. ID inexistente
+    // Test caso de error del método actualizarProducto. Producto no encontrado
     @Test
-    void actualizarProductoDeberiaLanzarExcepcionCuandoIdNoExiste() {
+    void actualizarProductoDeberiaLanzarExcepcionCuandoProductoNoSeEncuentra() {
         Long id = 1L;
         CrearProductoDto dto = crearProductoDto("Hamburguesa clásica", "8.50", true, 1L);
 
@@ -193,6 +193,25 @@ class ProductoServiceTest {
         assertThatThrownBy(() -> productoService.actualizarProducto(id, dto))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Producto no encontrado");
+
+        verify(productoRepository, never()).save(any());
+    }
+
+    // Test caso de error del método actualizarProducto. Categoría no encontrada
+    @Test
+    void actualizarProductoDeberiaLanzarExcepcionCuandoCategoriaNoSeEncuentra() {
+        Categoria categoriaProducto = crearCategoria(1L, "Hamburguesas");
+        Producto producto = crearProducto(1L, "Hamburguesa clásica", "8.50", true, categoriaProducto);
+
+        Categoria categoriaBuscada = crearCategoria(2L, "Patatas");
+        CrearProductoDto dto = crearProductoDto("Hamburguesa clásica", "8.50", true, categoriaBuscada.getId());
+
+        when(productoRepository.findById(producto.getId())).thenReturn(Optional.of(producto));
+        when(categoriaRepository.findById(categoriaBuscada.getId())).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> productoService.actualizarProducto(producto.getId(), dto))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Categoría no encontrada");
 
         verify(productoRepository, never()).save(any());
     }
@@ -225,7 +244,7 @@ class ProductoServiceTest {
 
         assertThatThrownBy(() -> productoService.cambiarEstado(id, activo))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("no encontrado");
+                .hasMessageContaining("Producto con id " + id + " no encontrado");
 
         verify(productoRepository, never()).save(any());
     }
