@@ -8,7 +8,6 @@ import gestionpedidos.model.Categoria;
 import gestionpedidos.model.Producto;
 import gestionpedidos.repository.CategoriaRepository;
 import gestionpedidos.repository.ProductoRepository;
-import gestionpedidos.service.ProductoService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

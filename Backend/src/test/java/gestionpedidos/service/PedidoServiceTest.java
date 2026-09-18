@@ -10,7 +10,6 @@ import gestionpedidos.model.*;
 import gestionpedidos.repository.PedidoRepository;
 import gestionpedidos.repository.ProductoRepository;
 import gestionpedidos.repository.TerminalRepository;
-import gestionpedidos.service.PedidoService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -58,9 +57,10 @@ class PedidoServiceTest {
         return producto;
     }
 
-    private Pedido crearPedido(Long id, EstadoPedido estado, String total, List<PedidoProducto> lineas) {
+    private Pedido crearPedido(Long id, String codigo, EstadoPedido estado, String total, List<PedidoProducto> lineas) {
         Pedido pedido = new Pedido();
         pedido.setId(id);
+        pedido.setCodigo(codigo);
         pedido.setEstadoPedido(estado);
         pedido.setTotal(new BigDecimal(total));
         pedido.setLineasPedido(new ArrayList<>(lineas)); // mutable por defecto, se puede rellenar después si el test lo necesita
@@ -98,8 +98,7 @@ class PedidoServiceTest {
     @Test
     void listarPedidosDeberiaDevolverTodosLosPedidosSinFiltrar() {
         // Arrange
-        Pedido pedido = crearPedido(1L, EstadoPedido.PREPARACION, "15.50", List.of());
-        pedido.setCodigo("PED-374837");
+        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.PREPARACION, "15.50", List.of());
         pedido.setFecha(LocalDateTime.of(2026, 8, 8, 12, 0));
         pedido.setTerminal(crearTerminal(1L));
 
@@ -111,6 +110,7 @@ class PedidoServiceTest {
         // Assert
         assertThat(resultado).hasSize(1);
         assertThat(resultado.get(0).getCodigo()).isEqualTo(pedido.getCodigo());
+
         verify(pedidoRepository).findAllByOrderByFechaAsc();
         verify(pedidoRepository, never()).findByEstadoPedidoOrderByFechaAsc(any());
     }
@@ -119,8 +119,7 @@ class PedidoServiceTest {
     @Test
     void listarPedidosDeberiaFiltrarPorEstado() {
         // Arrange
-        Pedido pedido = crearPedido(1L, EstadoPedido.PREPARACION, "15.50", List.of());
-        pedido.setCodigo("PED-374837");
+        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.PREPARACION, "15.50", List.of());
         pedido.setFecha(LocalDateTime.of(2026, 8, 8, 12, 0));
         pedido.setTerminal(crearTerminal(1L));
 
@@ -132,8 +131,10 @@ class PedidoServiceTest {
 
         // Assert
         assertThat(resultado).hasSize(1);
+        // get(0) -> primer elemento de la lista. Luego seguimos con getCodigo (atributo)
         assertThat(resultado.get(0).getCodigo()).isEqualTo(pedido.getCodigo());
         assertThat(resultado.get(0).getEstado()).isEqualTo(pedido.getEstadoPedido().name());
+
         verify(pedidoRepository).findByEstadoPedidoOrderByFechaAsc(pedido.getEstadoPedido());
         verify(pedidoRepository, never()).findAllByOrderByFechaAsc();
     }
@@ -216,7 +217,7 @@ class PedidoServiceTest {
     @Test
     void agregarProductosAPedidoDeberiaAgregarloSumandoloALaCantidadAnteriorSiYaExiste() {
         Producto producto = crearProducto(10L, "Hamburguesa clásica", "8.50", true);
-        Pedido pedido = crearPedido(1L, EstadoPedido.CREADO, "8.50", List.of());
+        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "8.50", List.of());
         pedido.getLineasPedido().add(crearLineaPedido(producto, 1)); // ya había 1 unidad en el pedido
 
         PedidoProductoRequestDto dto = crearPedidoProductoRequestDto(producto.getId(), 2);
@@ -237,7 +238,7 @@ class PedidoServiceTest {
     @Test
     void agregarProductosAPedidoDeberiaAgregarlosCreandoUnaNuevaLineaDeProductoSiNoExiste() {
         Producto producto = crearProducto(10L, "Hamburguesa clásica", "8.50", true);
-        Pedido pedido = crearPedido(1L, EstadoPedido.CREADO, "0.00", List.of()); // sin líneas todavía
+        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "0.00", List.of()); // sin líneas todavía
 
         PedidoProductoRequestDto dto = crearPedidoProductoRequestDto(producto.getId(), 2);
 
@@ -271,7 +272,7 @@ class PedidoServiceTest {
     // Test caso de error del método agregarProductosAPedido. Producto no encontrado
     @Test
     void agregarProductosAPedidoDeberiaLanzarExcepcionCuandoNoSeEncuentraElProducto() {
-        Pedido pedido = crearPedido(1L, EstadoPedido.CREADO, "0.00", List.of());
+        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "0.00", List.of());
         PedidoProductoRequestDto dto = crearPedidoProductoRequestDto(10L, 2);
 
         when(pedidoRepository.findById(pedido.getId())).thenReturn(Optional.of(pedido));
@@ -288,7 +289,7 @@ class PedidoServiceTest {
     @Test
     void agregarProductosAPedidoDeberiaLanzarExcepcionCuandoProductoEstaInactivo() {
         Producto producto = crearProducto(10L, "Hamburguesa clásica", "8.50", false);
-        Pedido pedido = crearPedido(1L, EstadoPedido.CREADO, "0.00", List.of());
+        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "0.00", List.of());
         PedidoProductoRequestDto dto = crearPedidoProductoRequestDto(producto.getId(), 2);
 
         when(pedidoRepository.findById(pedido.getId())).thenReturn(Optional.of(pedido));
@@ -307,7 +308,7 @@ class PedidoServiceTest {
         Producto producto = crearProducto(10L, "Hamburguesa clásica", "8.50", true);
         PedidoProducto linea = crearLineaPedido(producto, 2); // había 2 unidades en el pedido
 
-        Pedido pedido = crearPedido(1L, EstadoPedido.CREADO, "17.00", List.of(linea));
+        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "17.00", List.of(linea));
 
         int cantidadAEliminar = 2; // cantidad >= 2 (la cantidad que ya había) -> elimina la línea entera
 
@@ -331,7 +332,7 @@ class PedidoServiceTest {
         Producto producto = crearProducto(10L, "Hamburguesa clásica", "8.50", true);
         PedidoProducto linea = crearLineaPedido(producto, 2);
 
-        Pedido pedido = crearPedido(1L, EstadoPedido.CREADO, "17.00", List.of(linea));
+        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "17.00", List.of(linea));
 
         int cantidadAEliminar = 1; // cantidad < 2 -> restar cantidad y conservar la línea
 
@@ -377,7 +378,7 @@ class PedidoServiceTest {
 
         /* Incluimos un producto distinto del buscado en la línea en vez de dejarla vacía
         para comprobar que el filter funciona de verdad */
-        Pedido pedido = crearPedido(1L, EstadoPedido.CREADO, "17.00", List.of(lineaDeOtroProducto));
+        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "17.00", List.of(lineaDeOtroProducto));
         int cantidadAEliminar = 1;
 
         when(pedidoRepository.findById(pedido.getId())).thenReturn(Optional.of(pedido));
@@ -392,30 +393,97 @@ class PedidoServiceTest {
     // Test caso de éxito del método obtenerPedidoPorCodigo
     @Test
     void obtenerPedidoPorCodigoDeberiaDevolverloCuandoExiste() {
+        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "8.50", List.of());
+        /* La terminal de un pedido, al ser un objeto con su propia llamada a factoría,
+        no lo metemos como parámetro obligatorio de crearPedido() y  */
+        pedido.setTerminal(crearTerminal(1L));
+
+        when(pedidoRepository.findByCodigo(pedido.getCodigo())).thenReturn(Optional.of(pedido));
+
+        PedidoDto resultado = pedidoService.obtenerPedidoPorCodigo(pedido.getCodigo());
+
+        assertThat(resultado.getId()).isEqualTo(pedido.getId());
+        assertThat(resultado.getCodigo()).isEqualTo(pedido.getCodigo());
     }
 
     // Test caso de error del método obtenerPedidoPorCodigo. Pedido no encontrado
     @Test
     void obtenerPedidoPorCodigoDeberiaLanzarExcepcionCuandoPedidoNoSeEncuentra() {
+        String codigo = "PED-0001";
+
+        when(pedidoRepository.findByCodigo(codigo)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> pedidoService.obtenerPedidoPorCodigo(codigo))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Pedido con código " + codigo + " no encontrado");
     }
 
     // Test caso de éxito del método gestionarEstadoDelPedido
     @Test
     void gestionarEstadoDelPedidoDeberiaCambiarCuandoElCambioSolicitadoEsValido() {
+        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "8.50", List.of());
+        pedido.setTerminal(crearTerminal(1L));
+
+        EstadoPedido nuevoEstado = EstadoPedido.PREPARACION;
+
+        when(pedidoRepository.findById(pedido.getId())).thenReturn(Optional.of(pedido));
+
+        PedidoDto resultado = pedidoService.gestionarEstadoDelPedido(pedido.getId(), nuevoEstado);
+
+        assertThat(resultado.getId()).isEqualTo(pedido.getId());
+        assertThat(resultado.getEstado()).isEqualTo(nuevoEstado.name());
+
+        verify(pedidoRepository).save(any(Pedido.class));
     }
 
     // Test caso de error del método gestionarEstadoDelPedido. Pedido no encontrado
     @Test
     void gestionarEstadoDelPedidoDeberiaLanzarExcepcionCuandoPedidoNoSeEncuentra() {
+        Long pedidoId = 1L;
+        EstadoPedido nuevoEstado = EstadoPedido.PREPARACION;
+
+        when(pedidoRepository.findById(pedidoId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> pedidoService.gestionarEstadoDelPedido(pedidoId, nuevoEstado))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Pedido con ID " + pedidoId + " no encontrado");
+
+        verify(pedidoRepository, never()).save(any());
     }
 
     // Test caso de error del método gestionarEstadoDelPedido. Transición de estado no permitida
     @Test
     void gestionarEstadoDelPedidoDeberiaLanzarExcepcionCuandoTransicionDeEstadoNoEstaPermitida() {
+        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "8.50", List.of());
+        pedido.setTerminal(crearTerminal(1L));
+
+        EstadoPedido nuevoEstado = EstadoPedido.LISTO;
+
+        when(pedidoRepository.findById(pedido.getId())).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> pedidoService.gestionarEstadoDelPedido(pedido.getId(), nuevoEstado))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Transición de estado no permitida: " + pedido.getEstadoPedido() + " → " + nuevoEstado);
+
+        verify(pedidoRepository, never()).save(any());
     }
 
     // Test caso de error del método gestionarEstadoDelPedido. Caso ENTREGADO no tiene estado al que cambiar
     @Test
     void gestionarEstadoDelPedidoDeberiaLanzarExcepcionCuandoEstadoActualEsEntregado() {
+        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.ENTREGADO, "8.50", List.of());
+        pedido.setTerminal(crearTerminal(1L));
+
+        /* A diferencia de la transición anterior, aquí el nuevoEstado elegido es irrelevante:
+        la rama ENTREGADO del switch devuelve false sin comparar nada, así que cualquier valor fallaría igual */
+        EstadoPedido nuevoEstado = EstadoPedido.LISTO;
+
+        when(pedidoRepository.findById(pedido.getId())).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> pedidoService.gestionarEstadoDelPedido(pedido.getId(), nuevoEstado))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Transición de estado no permitida: " + pedido.getEstadoPedido() + " → " + nuevoEstado);
+
+        verify(pedidoRepository, never()).save(any());
     }
 }
