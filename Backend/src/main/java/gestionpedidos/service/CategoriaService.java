@@ -40,7 +40,7 @@ public class CategoriaService {
     // Obtener categorias por id
     public CategoriaDto obtenerPorId(Long id) {
         return toDto(categoriaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada")));
+                .orElseThrow(() -> new ResourceNotFoundException("La categoría con ID: " + id + " no existe")));
     }
 
     // *** MÉTODOS DE MAPEO ***

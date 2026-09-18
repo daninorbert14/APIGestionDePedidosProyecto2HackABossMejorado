@@ -29,6 +29,6 @@ public class TerminalController {
 
     @PostMapping
     public ResponseEntity<TerminalDto> crearTerminal(@Valid @RequestBody CrearTerminalDto nuevaTerminalDto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(terminalService.guardaTerminal(nuevaTerminalDto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(terminalService.guardarTerminal(nuevaTerminalDto));
     }
 }

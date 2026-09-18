@@ -2,7 +2,6 @@ package gestionpedidos.service;
 
 import gestionpedidos.dto.CategoriaDto;
 import gestionpedidos.dto.CrearCategoriaDto;
-import gestionpedidos.exception.BadRequestException;
 import gestionpedidos.exception.PedidoStateException;
 import gestionpedidos.exception.ResourceNotFoundException;
 import gestionpedidos.model.Categoria;
@@ -13,7 +12,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,6 +59,7 @@ public class CategoriaServiceTest {
         List<CategoriaDto> resultado = categoriaService.listarCategorias();
 
         // Assert
+        // Nos aseguramos de que devuelva todas las categorías disponibles (2)
         assertThat(resultado).hasSize(2);
         assertThat(resultado.get(0).getId()).isEqualTo(categoria1.getId());
         assertThat(resultado.get(1).getId()).isEqualTo(categoria2.getId());
@@ -68,7 +67,7 @@ public class CategoriaServiceTest {
 
     // Test caso de éxito del método guardarCategoria
     @Test
-    void guardarCategoriaDeberiaGuardarlaCuandoNombreNoExiste() {
+    void guardarCategoriaDeberiaGuardarlaCuandoElNombreNoExiste() {
         CrearCategoriaDto dto = crearCategoriaDto("Hamburguesas");
 
         when(categoriaRepository.existsByNombre(dto.getNombre())).thenReturn(false);
@@ -81,6 +80,7 @@ public class CategoriaServiceTest {
         CategoriaDto resultado = categoriaService.guardarCategoria(dto);
 
         assertThat(resultado.getNombre()).isEqualTo(dto.getNombre());
+
         verify(categoriaRepository).save(any(Categoria.class));
     }
 
@@ -119,6 +119,6 @@ public class CategoriaServiceTest {
 
         assertThatThrownBy(() -> categoriaService.obtenerPorId(categoriaId))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("Categoría no encontrada");
+                .hasMessageContaining("La categoría con ID: " + categoriaId + " no existe");
     }
 }

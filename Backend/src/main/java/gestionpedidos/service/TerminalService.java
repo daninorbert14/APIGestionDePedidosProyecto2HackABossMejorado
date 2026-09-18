@@ -16,22 +16,22 @@ import java.util.List;
 public class TerminalService {
     private final TerminalRepository terminalRepository;
 
-    //Método para listar todas las terminales
+    // Método para listar todas las terminales
     public List<TerminalDto> listarTerminales() {
         return terminalRepository.findAll().stream()
                 .map(this::toDto)
                 .toList();
     }
 
-    //Método para buscar una terminal mediante su Id
+    // Método para buscar una terminal mediante su Id
     public TerminalDto buscarTerminalPorId(Long id) {
-        Terminal terminal = terminalRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("La terminal con id: " + id + " no existe"));
+        Terminal terminal = terminalRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("La terminal con ID: " + id + " no existe"));
         return toDto(terminal);
     }
 
-    //Método para guardar una nueva terminal
-    //Recibe un dto y devuelve otro de salida
-    public TerminalDto guardaTerminal(CrearTerminalDto nuevaTerminalDto) {
+    // Método para guardar una nueva terminal. Recibe un dto y devuelve otro de salida
+    public TerminalDto guardarTerminal(CrearTerminalDto nuevaTerminalDto) {
         // Evita terminales con el mismo nombre
         if (terminalRepository.existsByNombre(nuevaTerminalDto.getNombre())) {
             throw new PedidoStateException("Ya existe una terminal con el nombre: " + nuevaTerminalDto.getNombre());
