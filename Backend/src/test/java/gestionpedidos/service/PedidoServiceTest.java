@@ -98,18 +98,28 @@ class PedidoServiceTest {
     @Test
     void listarPedidosDeberiaDevolverTodosLosPedidosSinFiltrar() {
         // Arrange
-        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.PREPARACION, "15.50", List.of());
-        pedido.setFecha(LocalDateTime.of(2026, 8, 8, 12, 0));
-        pedido.setTerminal(crearTerminal(1L));
+        Pedido pedido1 = crearPedido(1L, "PED-0001", EstadoPedido.PREPARACION, "15.50", List.of());
+        pedido1.setFecha(LocalDateTime.of(2026, 8, 8, 12, 0));
+        pedido1.setTerminal(crearTerminal(1L));
 
-        when(pedidoRepository.findAllByOrderByFechaAsc()).thenReturn(List.of(pedido));
+        // Dos pedidos para comprobar que el método mapea correctamente una lista completa, no solo un elemento
+        Pedido pedido2 = crearPedido(2L, "PED-0002", EstadoPedido.CREADO, "15.50", List.of());
+        pedido2.setFecha(LocalDateTime.of(2026, 8, 9, 12, 0));
+        pedido2.setTerminal(pedido1.getTerminal());
+
+        List<Pedido> pedidos = new ArrayList<>();
+        pedidos.add(pedido1);
+        pedidos.add(pedido2);
+
+        when(pedidoRepository.findAllByOrderByFechaAsc()).thenReturn(pedidos);
 
         // Act
         List<PedidoDto> resultado = pedidoService.listarPedidos(null);
 
         // Assert
-        assertThat(resultado).hasSize(1);
-        assertThat(resultado.get(0).getCodigo()).isEqualTo(pedido.getCodigo());
+        assertThat(resultado).hasSize(2);
+        assertThat(resultado.get(0).getCodigo()).isEqualTo(pedido1.getCodigo());
+        assertThat(resultado.get(1).getCodigo()).isEqualTo(pedido2.getCodigo());
 
         verify(pedidoRepository).findAllByOrderByFechaAsc();
         verify(pedidoRepository, never()).findByEstadoPedidoOrderByFechaAsc(any());
@@ -118,7 +128,6 @@ class PedidoServiceTest {
     // Test listarPedidos filtrados por el valor de "estado"
     @Test
     void listarPedidosDeberiaFiltrarPorEstado() {
-        // Arrange
         Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.PREPARACION, "15.50", List.of());
         pedido.setFecha(LocalDateTime.of(2026, 8, 8, 12, 0));
         pedido.setTerminal(crearTerminal(1L));
@@ -126,10 +135,8 @@ class PedidoServiceTest {
         when(pedidoRepository.findByEstadoPedidoOrderByFechaAsc(pedido.getEstadoPedido()))
                 .thenReturn(List.of(pedido));
 
-        // Act
         List<PedidoDto> resultado = pedidoService.listarPedidos(pedido.getEstadoPedido());
 
-        // Assert
         assertThat(resultado).hasSize(1);
         // get(0) -> primer elemento de la lista. Luego seguimos con getCodigo (atributo)
         assertThat(resultado.get(0).getCodigo()).isEqualTo(pedido.getCodigo());

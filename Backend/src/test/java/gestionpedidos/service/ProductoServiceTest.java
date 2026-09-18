@@ -105,10 +105,25 @@ class ProductoServiceTest {
         verify(productoRepository, never()).save(any());
     }
 
+    // Test listarProductos: devuelve todos, ordenados por nombre por defecto, cuando no recibe argumentos
+    @Test
+    void listarProductosDeberiaDevolverTodosOrdenadosPorNombreCuandoNoRecibeArgumentos() {
+        Producto producto1 = crearProducto(1L, "Patatas", "3.00", true, crearCategoria(1L, "Snacks"));
+        Producto producto2 = crearProducto(2L, "Menú completo", "15.00", true, crearCategoria(2L, "Menús"));
+
+        when(productoRepository.findAll()).thenReturn(List.of(producto1, producto2));
+
+        List<ProductoDto> resultado = productoService.listarProductos(null, null, null, null);
+
+        assertThat(resultado).hasSize(2);
+        // Orden por defecto: alfabético por nombre -> "Menú completo" antes que "Patatas"
+        assertThat(resultado.get(0).getId()).isEqualTo(producto2.getId());
+        assertThat(resultado.get(1).getId()).isEqualTo(producto1.getId());
+    }
+
     // Test listarProductos: filtra por categoría además de por estado activo
     @Test
     void listarProductosDeberiaFiltrarPorActivoYCategoria() {
-        // Arrange
         Categoria hamburguesas = crearCategoria(1L, "Hamburguesas");
         Categoria bebidas = crearCategoria(2L, "Bebidas");
 
@@ -121,7 +136,6 @@ class ProductoServiceTest {
         // Act: pedimos solo los activos de la categoría 1 (Hamburguesas)
         List<ProductoDto> resultado = productoService.listarProductos(true, hamburguesas.getId(), null, null);
 
-        // Assert
         assertThat(resultado).hasSize(1);
         assertThat(resultado.get(0).getNombre()).isEqualTo(p1.getNombre());
     }
