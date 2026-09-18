@@ -79,8 +79,7 @@ public class ProductoService {
                 .toList();
     }
 
-    // Actualizar
-    // Recibe un CrearProductoDto para no duplicar
+    // actualizarProducto recibe un CrearProductoDto para no duplicar
     public ProductoDto actualizarProducto(Long id, CrearProductoDto dto) {
 
         Producto producto = productoRepository.findById(id)

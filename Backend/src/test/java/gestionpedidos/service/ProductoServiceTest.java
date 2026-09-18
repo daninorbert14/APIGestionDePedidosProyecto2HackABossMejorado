@@ -88,6 +88,7 @@ class ProductoServiceTest {
         assertThat(resultado.getNombre()).isEqualTo(dto.getNombre());
         assertThat(resultado.getPrecio()).isEqualByComparingTo(dto.getPrecio());
         assertThat(resultado.getNombreCategoria()).isEqualTo(categoria.getNombre());
+
         verify(productoRepository).save(any(Producto.class));
     }
 
@@ -191,6 +192,7 @@ class ProductoServiceTest {
         assertThat(resultado.getNombre()).isEqualTo(dto.getNombre());
         assertThat(resultado.getPrecio()).isEqualByComparingTo(dto.getPrecio());
         assertThat(resultado.getNombreCategoria()).isEqualTo(categoriaNueva.getNombre());
+
         verify(productoRepository).save(any(Producto.class));
     }
 
@@ -245,6 +247,7 @@ class ProductoServiceTest {
 
         // Mismo objeto, ya mutado. Al ser un método void, reutilizar la misma instancia que se mockeó sirve como comprobación
         assertThat(producto.isActivo()).isFalse();
+
         verify(productoRepository).save(producto);
     }
 

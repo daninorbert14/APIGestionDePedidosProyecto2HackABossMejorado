@@ -107,11 +107,7 @@ class PedidoServiceTest {
         pedido2.setFecha(LocalDateTime.of(2026, 8, 9, 12, 0));
         pedido2.setTerminal(pedido1.getTerminal());
 
-        List<Pedido> pedidos = new ArrayList<>();
-        pedidos.add(pedido1);
-        pedidos.add(pedido2);
-
-        when(pedidoRepository.findAllByOrderByFechaAsc()).thenReturn(pedidos);
+        when(pedidoRepository.findAllByOrderByFechaAsc()).thenReturn(List.of(pedido1, pedido2));
 
         // Act
         List<PedidoDto> resultado = pedidoService.listarPedidos(null);

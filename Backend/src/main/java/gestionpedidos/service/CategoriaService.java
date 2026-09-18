@@ -17,14 +17,14 @@ public class CategoriaService {
 
     private final CategoriaRepository categoriaRepository;
 
-    //    Listar categorias
+    // Listar categorias
     public List<CategoriaDto> listarCategorias() {
         return categoriaRepository.findAll().stream()
                 .map(this::toDto)
                 .toList();
     }
 
-    //    Crear categorias
+    // Crear categorias
     public CategoriaDto guardarCategoria(CrearCategoriaDto crearCategoriaDto) {
         // Evita categorías con el mismo nombre
         if (categoriaRepository.existsByNombre(crearCategoriaDto.getNombre())) {
@@ -34,12 +34,13 @@ public class CategoriaService {
         Categoria nuevaCategoria = new Categoria();
         nuevaCategoria.setNombre(crearCategoriaDto.getNombre());
         Categoria categoriaGuardada = categoriaRepository.save(nuevaCategoria);
-        return toDto(categoriaGuardada);    //Este dto devolvemos
+        return toDto(categoriaGuardada);    // Este dto devolvemos
     }
 
-    //    Obtener categorias por id
+    // Obtener categorias por id
     public CategoriaDto obtenerPorId(Long id) {
-        return toDto(categoriaRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Categoria no encontrada")));
+        return toDto(categoriaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada")));
     }
 
     // *** MÉTODOS DE MAPEO ***
