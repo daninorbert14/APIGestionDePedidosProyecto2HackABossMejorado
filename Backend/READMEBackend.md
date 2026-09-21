@@ -312,6 +312,39 @@ mvn spring-boot:run
 
 ---
 
+## Tests
+
+El proyecto incluye una suite de tests unitarios de la capa `Service`, escritos con **JUnit 5** y **Mockito**, que cubre toda la lógica de negocio de la aplicación de forma aislada — sin necesidad de base de datos ni de levantar el contexto de Spring.
+
+### Cobertura
+
+| Clase de test | Qué cubre |
+|---|---|
+| `ProductoServiceTest` | Creación, actualización, listado (filtrado por estado/categoría y ordenación por precio/nombre), y activación/desactivación de productos |
+| `PedidoServiceTest` | Registro de pedidos, gestión de líneas de producto (añadir sumando cantidad o creando línea nueva, eliminar total o parcialmente), consulta por código, y la máquina de estados de transición (`CREADO → PREPARACION → LISTO → PAGADO → ENTREGADO`) |
+| `CategoriaServiceTest` | Listado, creación (con validación de duplicados) y consulta de categorías |
+| `TerminalServiceTest` | Listado, creación (con validación de duplicados) y consulta de terminales |
+
+Cada método público está cubierto con su caso de éxito y sus casos de error correspondientes (recursos no encontrados, nombres duplicados, transiciones de estado no permitidas, validaciones de negocio), siguiendo el patrón **Arrange / Act / Assert**.
+
+### Enfoque
+
+- Los repositorios (`ProductoRepository`, `PedidoRepository`, etc.) se simulan con `@Mock` de Mockito — los tests no acceden a MySQL en ningún momento.
+- `@InjectMocks` inyecta esos mocks en el `Service` real bajo prueba.
+- Cada clase de test incluye métodos factoría privados para construir entidades y DTOs de prueba, evitando repetir el mismo `Arrange` en cada caso.
+
+### Cómo ejecutarlos
+
+Desde IntelliJ, botón derecho sobre `src/test/java` → `Run 'All Tests'`, o desde terminal:
+
+```bash
+mvn test
+```
+
+Al no depender de una base de datos real, la suite completa se ejecuta en milisegundos.
+
+---
+
 ## Mejoras futuras
 
 Funcionalidades identificadas como mejoras técnicas a implementar en futuras iteraciones:
