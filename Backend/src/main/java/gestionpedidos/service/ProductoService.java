@@ -18,6 +18,7 @@ import java.util.stream.Stream;
 @Service
 @RequiredArgsConstructor
 public class ProductoService {
+
     private final ProductoRepository productoRepository;
     private final CategoriaRepository categoriaRepository;
 

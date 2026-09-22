@@ -1,10 +1,10 @@
 {
   "info": {
-    "_postman_id": "9fc441cb-8b31-4958-b797-d5da32ff9715",
-    "name": "Gestion de pedidos- hamburgueseria",
+    "_postman_id": "bdcfc9cb-6d65-4f81-8dc8-29a73b446c30",
+    "name": "API de gestión de pedidos - Hamburguesería",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "53102778",
-    "_collection_link": "https://go.postman.co/collection/53102778-9fc441cb-8b31-4958-b797-d5da32ff9715?source=collection_link"
+    "_exporter_id": "53895527",
+    "_collection_link": "https://go.postman.co/collection/53895527-bdcfc9cb-6d65-4f81-8dc8-29a73b446c30?source=collection_link"
   },
   "item": [
     {
@@ -50,10 +50,10 @@
                   ]
                 }
               },
-              "_postman_previewlanguage": null,
-              "header": null,
+              "_postman_previewlanguage": "Text",
+              "header": [],
               "cookie": [],
-              "body": null
+              "body": ""
             }
           ]
         },
@@ -115,7 +115,7 @@
                   ]
                 }
               },
-              "_postman_previewlanguage": "",
+              "_postman_previewlanguage": "Text",
               "header": [],
               "cookie": [
                 {
@@ -170,10 +170,10 @@
                   ]
                 }
               },
-              "_postman_previewlanguage": null,
-              "header": null,
+              "_postman_previewlanguage": "Text",
+              "header": [],
               "cookie": [],
-              "body": null
+              "body": ""
             }
           ]
         }
@@ -236,7 +236,7 @@
                   ]
                 }
               },
-              "_postman_previewlanguage": "",
+              "_postman_previewlanguage": "Text",
               "header": [],
               "cookie": [
                 {
@@ -307,7 +307,7 @@
                   ]
                 }
               },
-              "_postman_previewlanguage": "",
+              "_postman_previewlanguage": "Text",
               "header": [],
               "cookie": [
                 {
@@ -386,7 +386,7 @@
                   ]
                 }
               },
-              "_postman_previewlanguage": "",
+              "_postman_previewlanguage": "Text",
               "header": [],
               "cookie": [
                 {
@@ -493,7 +493,7 @@
                   ]
                 }
               },
-              "_postman_previewlanguage": "",
+              "_postman_previewlanguage": "Text",
               "header": [],
               "cookie": [
                 {
@@ -546,10 +546,10 @@
                   ]
                 }
               },
-              "_postman_previewlanguage": null,
-              "header": null,
+              "_postman_previewlanguage": "Text",
+              "header": [],
               "cookie": [],
-              "body": null
+              "body": ""
             }
           ]
         },
@@ -640,7 +640,7 @@
                   ]
                 }
               },
-              "_postman_previewlanguage": "",
+              "_postman_previewlanguage": "Text",
               "header": [],
               "cookie": [
                 {
@@ -751,7 +751,7 @@
                   ]
                 }
               },
-              "_postman_previewlanguage": "",
+              "_postman_previewlanguage": "Text",
               "header": [],
               "cookie": [
                 {
@@ -826,10 +826,10 @@
                   ]
                 }
               },
-              "_postman_previewlanguage": null,
-              "header": null,
+              "_postman_previewlanguage": "Text",
+              "header": [],
               "cookie": [],
-              "body": null
+              "body": ""
             }
           ]
         },
@@ -910,7 +910,7 @@
                   ]
                 }
               },
-              "_postman_previewlanguage": "",
+              "_postman_previewlanguage": "Text",
               "header": [],
               "cookie": [
                 {
@@ -922,6 +922,53 @@
               "body": ""
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "Estadísticas",
+      "item": [
+        {
+          "name": "GET/api/estadisticas/ranking-terminales",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/estadisticas/ranking-terminales",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "estadisticas",
+                "ranking-terminales"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET/api/estadisticas/productos-mas-vendidos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/estadisticas/productos-mas-vendidos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "estadisticas",
+                "productos-mas-vendidos"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     }
