@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/terminales")
@@ -28,7 +29,10 @@ public class TerminalController {
     }
 
     @PostMapping
-    public ResponseEntity<TerminalDto> crearTerminal(@Valid @RequestBody CrearTerminalDto nuevaTerminalDto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(terminalService.crearTerminal(nuevaTerminalDto));
+    public ResponseEntity<Map<String, Object>> crearTerminal(@Valid @RequestBody CrearTerminalDto nuevaTerminalDto) {
+        TerminalDto terminalDto = terminalService.crearTerminal(nuevaTerminalDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "mensaje", "Terminal creada correctamente",
+                "data", terminalDto));
     }
 }

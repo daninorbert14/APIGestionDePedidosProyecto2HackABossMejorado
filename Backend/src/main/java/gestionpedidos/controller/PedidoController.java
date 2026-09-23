@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/pedidos")
@@ -19,8 +20,11 @@ public class PedidoController {
     private final PedidoService pedidoService;
 
     @PostMapping
-    public ResponseEntity<PedidoDto> registrarPedido(@Valid @RequestBody CrearPedidoDto crearPedidoDto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(pedidoService.registrarPedido(crearPedidoDto));
+    public ResponseEntity<Map<String, Object>> registrarPedido(@Valid @RequestBody CrearPedidoDto crearPedidoDto) {
+        PedidoDto pedidoDto = pedidoService.registrarPedido(crearPedidoDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "mensaje", "Pedido registrado correctamente",
+                "data", pedidoDto));
     }
 
     @PostMapping("/{pedidoId}/productos")

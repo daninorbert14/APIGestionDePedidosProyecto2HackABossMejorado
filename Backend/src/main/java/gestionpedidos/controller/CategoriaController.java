@@ -21,7 +21,8 @@ public class CategoriaController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> crearCategoria(@Valid @RequestBody CrearCategoriaDto nuevaCategoriaDto) {
         CategoriaDto categoriaDto = categoriaService.crearCategoria(nuevaCategoriaDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("mensaje", "Categoría creada correctamente",
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "mensaje", "Categoría creada correctamente",
                 "data", categoriaDto));
     }
 

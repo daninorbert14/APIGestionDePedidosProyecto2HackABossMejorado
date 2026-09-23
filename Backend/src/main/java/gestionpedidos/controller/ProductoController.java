@@ -21,10 +21,10 @@ public class ProductoController {
     // Crear
     @PostMapping
     public ResponseEntity<Map<String, Object>> crearProducto(@Valid @RequestBody CrearProductoDto dto) {
-        ProductoDto producto = productoService.crearProducto(dto);
+        ProductoDto productoDto = productoService.crearProducto(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "mensaje", "Producto creado correctamente",
-                "data", producto));
+                "data", productoDto));
 
     }
 
