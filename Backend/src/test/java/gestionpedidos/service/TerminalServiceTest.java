@@ -50,8 +50,8 @@ public class TerminalServiceTest {
     @Test
     void listarTerminalesDeberiaDevolverTodas() {
         // Arrange
-        Terminal terminal1 = crearTerminal(1L, "Terminal-1");
-        Terminal terminal2 = crearTerminal(2L, "Terminal-2");
+        Terminal terminal1 = crearTerminal(1L, "Terminal 1");
+        Terminal terminal2 = crearTerminal(2L, "Terminal 2");
 
         when(terminalRepository.findAll()).thenReturn(List.of(terminal1, terminal2));
 
@@ -71,7 +71,7 @@ public class TerminalServiceTest {
     // Test caso de éxito del método buscarTerminalPorId
     @Test
     void buscarTerminalPorIdDeberiaDevolverlaCuandoExiste() {
-        Terminal terminal = crearTerminal(1L, "Terminal-1");
+        Terminal terminal = crearTerminal(1L, "Terminal 1");
 
         when(terminalRepository.findById(terminal.getId())).thenReturn(Optional.of(terminal));
 
@@ -97,10 +97,10 @@ public class TerminalServiceTest {
         // System.out.println(mockingDetails(terminalRepository).printInvocations());
     }
 
-    // Test caso de éxito del método guardarTerminal
+    // Test caso de éxito del método crearTerminal
     @Test
-    void guardarTerminalDeberiaGuardarlaCuandoElNombreNoExiste() {
-        CrearTerminalDto dto = crearTerminalDto("Terminal-1");
+    void crearTerminalDeberiaGuardarlaCuandoElNombreNoExiste() {
+        CrearTerminalDto dto = crearTerminalDto("Terminal 1");
 
         when(terminalRepository.existsByNombre(dto.getNombre())).thenReturn(false);
         when(terminalRepository.save(any(Terminal.class))).thenAnswer(invocation -> {
@@ -109,7 +109,7 @@ public class TerminalServiceTest {
             return terminal;
         });
 
-        TerminalDto resultado = terminalService.guardarTerminal(dto);
+        TerminalDto resultado = terminalService.crearTerminal(dto);
 
         // System.out.println(mockingDetails(terminalRepository).printInvocations());
 
@@ -118,14 +118,14 @@ public class TerminalServiceTest {
         verify(terminalRepository).save(any(Terminal.class));
     }
 
-    // Test caso de error del método guardarTerminal. Nombre de terminal ya existente
+    // Test caso de error del método crearTerminal. Nombre de terminal ya existente
     @Test
-    void guardarTerminalDeberiaLanzarExcepcionCuandoElNombreYaExiste() {
-        CrearTerminalDto dto = crearTerminalDto("Terminal-1");
+    void crearTerminalDeberiaLanzarExcepcionCuandoElNombreYaExiste() {
+        CrearTerminalDto dto = crearTerminalDto("Terminal 1");
 
         when(terminalRepository.existsByNombre(dto.getNombre())).thenReturn(true);
 
-        assertThatThrownBy(() -> terminalService.guardarTerminal(dto))
+        assertThatThrownBy(() -> terminalService.crearTerminal(dto))
                 .isInstanceOf(PedidoStateException.class)
                 .hasMessageContaining("Ya existe una terminal con el nombre: " + dto.getNombre());
 

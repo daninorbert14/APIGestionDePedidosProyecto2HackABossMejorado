@@ -67,9 +67,9 @@ public class CategoriaServiceTest {
         assertThat(resultado.get(1).getId()).isEqualTo(categoria2.getId());
     }
 
-    // Test caso de éxito del método guardarCategoria
+    // Test caso de éxito del método crearCategoria
     @Test
-    void guardarCategoriaDeberiaGuardarlaCuandoElNombreNoExiste() {
+    void crearCategoriaDeberiaGuardarlaCuandoElNombreNoExiste() {
         CrearCategoriaDto dto = crearCategoriaDto("Hamburguesas");
 
         when(categoriaRepository.existsByNombre(dto.getNombre())).thenReturn(false);
@@ -79,7 +79,7 @@ public class CategoriaServiceTest {
             return categoria;
         });
 
-        CategoriaDto resultado = categoriaService.guardarCategoria(dto);
+        CategoriaDto resultado = categoriaService.crearCategoria(dto);
 
         // System.out.println(mockingDetails(categoriaRepository).printInvocations());
 
@@ -88,14 +88,14 @@ public class CategoriaServiceTest {
         verify(categoriaRepository).save(any(Categoria.class));
     }
 
-    // Test caso de error del método guardarCategoria. Nombre de categoría ya existente
+    // Test caso de error del método crearCategoria. Nombre de categoría ya existente
     @Test
-    void guardarCategoriaDeberiaLanzarExcepcionCuandoElNombreYaExiste() {
+    void crearCategoriaDeberiaLanzarExcepcionCuandoElNombreYaExiste() {
         CrearCategoriaDto dto = crearCategoriaDto("Hamburguesas");
 
         when(categoriaRepository.existsByNombre(dto.getNombre())).thenReturn(true);
 
-        assertThatThrownBy(() -> categoriaService.guardarCategoria(dto))
+        assertThatThrownBy(() -> categoriaService.crearCategoria(dto))
                 .isInstanceOf(PedidoStateException.class)
                 .hasMessageContaining("Ya existe una categoría con el nombre: " + dto.getNombre());
 

@@ -19,7 +19,7 @@ public class PedidoController {
     private final PedidoService pedidoService;
 
     @PostMapping
-    public ResponseEntity<PedidoDto> registrarNuevoPedido(@Valid @RequestBody CrearPedidoDto crearPedidoDto) {
+    public ResponseEntity<PedidoDto> registrarPedido(@Valid @RequestBody CrearPedidoDto crearPedidoDto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(pedidoService.registrarPedido(crearPedidoDto));
     }
 

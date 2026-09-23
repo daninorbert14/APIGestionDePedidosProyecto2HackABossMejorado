@@ -25,7 +25,7 @@ public class CategoriaService {
     }
 
     // Crear categorias
-    public CategoriaDto guardarCategoria(CrearCategoriaDto crearCategoriaDto) {
+    public CategoriaDto crearCategoria(CrearCategoriaDto crearCategoriaDto) {
         // Evita categorías con el mismo nombre
         if (categoriaRepository.existsByNombre(crearCategoriaDto.getNombre())) {
             throw new PedidoStateException("Ya existe una categoría con el nombre: " + crearCategoriaDto.getNombre());
