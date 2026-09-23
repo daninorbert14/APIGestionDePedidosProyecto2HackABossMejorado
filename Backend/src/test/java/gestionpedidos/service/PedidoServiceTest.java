@@ -112,6 +112,8 @@ class PedidoServiceTest {
         // Act
         List<PedidoDto> resultado = pedidoService.listarPedidos(null);
 
+        // System.out.println(mockingDetails(pedidoRepository).printInvocations());
+
         // Assert
         assertThat(resultado).hasSize(2);
         assertThat(resultado.get(0).getCodigo()).isEqualTo(pedido1.getCodigo());
@@ -132,6 +134,8 @@ class PedidoServiceTest {
                 .thenReturn(List.of(pedido));
 
         List<PedidoDto> resultado = pedidoService.listarPedidos(pedido.getEstadoPedido());
+
+        // System.out.println(mockingDetails(pedidoRepository).printInvocations());
 
         assertThat(resultado).hasSize(1);
         // get(0) -> primer elemento de la lista. Luego seguimos con getCodigo (atributo)
@@ -161,6 +165,8 @@ class PedidoServiceTest {
 
         PedidoDto resultado = pedidoService.registrarPedido(crearPedidoDto);
 
+        // System.out.println(mockingDetails(pedidoRepository).printInvocations());
+
         assertThat(resultado.getTerminalId()).isEqualTo(crearPedidoDto.getTerminalId());
         assertThat(resultado.getEstado()).isEqualTo("CREADO");
         assertThat(resultado.getTotal()).isEqualByComparingTo("17.00"); // 8.50 * 2
@@ -179,6 +185,9 @@ class PedidoServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("La terminal con ID " + crearPedidoDto.getTerminalId() + " no existe");
 
+        // Aquí falla en terminalRepository, no en pedidoRepository
+        // System.out.println(mockingDetails(terminalRepository).printInvocations());
+
         verify(pedidoRepository, never()).save(any());
     }
 
@@ -195,6 +204,9 @@ class PedidoServiceTest {
         assertThatThrownBy(() -> pedidoService.registrarPedido(crearPedidoDto))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Producto con ID " + productoId + " no encontrado");
+
+        // Aquí falla en productoRepository, no en pedidoRepository
+        // System.out.println(mockingDetails(productoRepository).printInvocations());
 
         verify(pedidoRepository, never()).save(any());
     }
@@ -213,6 +225,8 @@ class PedidoServiceTest {
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("El producto " + producto.getNombre() + " no está activo");
 
+        // System.out.println(mockingDetails(productoRepository).printInvocations());
+
         verify(pedidoRepository, never()).save(any());
     }
 
@@ -230,6 +244,8 @@ class PedidoServiceTest {
         when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
 
         ProductosPedidoDto resultado = pedidoService.agregarProductosAPedido(pedido.getId(), dto);
+
+        // System.out.println(mockingDetails(pedidoRepository).printInvocations());
 
         assertThat(resultado.getProductoId()).isEqualTo(dto.getProductoId());
         assertThat(resultado.getCantidad()).isEqualTo(3); // 1 (ya existía) + 2 (se añade)
@@ -251,6 +267,8 @@ class PedidoServiceTest {
 
         ProductosPedidoDto resultado = pedidoService.agregarProductosAPedido(pedido.getId(), dto);
 
+        // System.out.println(mockingDetails(pedidoRepository).printInvocations());
+
         assertThat(resultado.getProductoId()).isEqualTo(dto.getProductoId());
         assertThat(resultado.getCantidad()).isEqualTo(dto.getCantidad());
         assertThat(resultado.getSubtotal()).isEqualByComparingTo("17.00");
@@ -269,6 +287,8 @@ class PedidoServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Pedido con ID " + pedidoId + " no encontrado");
 
+        // System.out.println(mockingDetails(pedidoRepository).printInvocations());
+
         verify(pedidoRepository, never()).save(any());
     }
 
@@ -284,6 +304,9 @@ class PedidoServiceTest {
         assertThatThrownBy(() -> pedidoService.agregarProductosAPedido(pedido.getId(), dto))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Producto con ID " + dto.getProductoId() + " no encontrado");
+
+        // Aquí falla en productoRepository, no en pedidoRepository
+        // System.out.println(mockingDetails(productoRepository).printInvocations());
 
         verify(pedidoRepository, never()).save(any());
     }
@@ -302,6 +325,8 @@ class PedidoServiceTest {
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("El producto " + producto.getNombre() + " no está activo");
 
+        // System.out.println(mockingDetails(productoRepository).printInvocations());
+
         verify(pedidoRepository, never()).save(any());
     }
 
@@ -319,6 +344,8 @@ class PedidoServiceTest {
         when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
 
         ProductosPedidoDto resultado = pedidoService.eliminarProductoDePedido(pedido.getId(), producto.getId(), cantidadAEliminar);
+
+        // System.out.println(mockingDetails(pedidoRepository).printInvocations());
 
         // El DTO devuelto describe la línea tal y como estaba antes de eliminarla
         assertThat(resultado.getProductoId()).isEqualTo(producto.getId());
@@ -344,11 +371,12 @@ class PedidoServiceTest {
 
         ProductosPedidoDto resultado = pedidoService.eliminarProductoDePedido(pedido.getId(), producto.getId(), cantidadAEliminar);
 
+        // System.out.println(mockingDetails(pedidoRepository).printInvocations());
+
         // El resultado refleja el estado ya mutado de la línea (2 - 1 = 1), a diferencia del caso "eliminar entera"
         assertThat(resultado.getProductoId()).isEqualTo(producto.getId());
         assertThat(resultado.getCantidad()).isEqualTo(1);
         assertThat(resultado.getSubtotal()).isEqualByComparingTo("8.50");
-
         // La línea sigue en el pedido (no se elimina), con la cantidad ya actualizada
         assertThat(pedido.getLineasPedido()).hasSize(1);
         assertThat(linea.getCantidad()).isEqualTo(1);
@@ -368,6 +396,8 @@ class PedidoServiceTest {
         assertThatThrownBy(() -> pedidoService.eliminarProductoDePedido(pedidoId, productoId, cantidadAEliminar))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Pedido con ID " + pedidoId + " no encontrado");
+
+        // System.out.println(mockingDetails(pedidoRepository).printInvocations());
 
         verify(pedidoRepository, never()).save(any());
     }
@@ -390,6 +420,8 @@ class PedidoServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("El producto con ID " + productoBuscado.getId() + " no está en el pedido");
 
+        // System.out.println(mockingDetails(pedidoRepository).printInvocations());
+
         verify(pedidoRepository, never()).save(any());
     }
 
@@ -405,6 +437,8 @@ class PedidoServiceTest {
 
         PedidoDto resultado = pedidoService.obtenerPedidoPorCodigo(pedido.getCodigo());
 
+        // System.out.println(mockingDetails(pedidoRepository).printInvocations());
+
         assertThat(resultado.getId()).isEqualTo(pedido.getId());
         assertThat(resultado.getCodigo()).isEqualTo(pedido.getCodigo());
     }
@@ -419,6 +453,8 @@ class PedidoServiceTest {
         assertThatThrownBy(() -> pedidoService.obtenerPedidoPorCodigo(codigo))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Pedido con código " + codigo + " no encontrado");
+
+        // System.out.println(mockingDetails(pedidoRepository).printInvocations());
     }
 
     // Test caso de éxito del método gestionarEstadoDelPedido
@@ -432,6 +468,8 @@ class PedidoServiceTest {
         when(pedidoRepository.findById(pedido.getId())).thenReturn(Optional.of(pedido));
 
         PedidoDto resultado = pedidoService.gestionarEstadoDelPedido(pedido.getId(), nuevoEstado);
+
+        // System.out.println(mockingDetails(pedidoRepository).printInvocations());
 
         assertThat(resultado.getId()).isEqualTo(pedido.getId());
         assertThat(resultado.getEstado()).isEqualTo(nuevoEstado.name());
@@ -451,6 +489,8 @@ class PedidoServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Pedido con ID " + pedidoId + " no encontrado");
 
+        // System.out.println(mockingDetails(pedidoRepository).printInvocations());
+
         verify(pedidoRepository, never()).save(any());
     }
 
@@ -467,6 +507,8 @@ class PedidoServiceTest {
         assertThatThrownBy(() -> pedidoService.gestionarEstadoDelPedido(pedido.getId(), nuevoEstado))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("Transición de estado no permitida: " + pedido.getEstadoPedido() + " → " + nuevoEstado);
+
+        // System.out.println(mockingDetails(pedidoRepository).printInvocations());
 
         verify(pedidoRepository, never()).save(any());
     }
@@ -486,6 +528,8 @@ class PedidoServiceTest {
         assertThatThrownBy(() -> pedidoService.gestionarEstadoDelPedido(pedido.getId(), nuevoEstado))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("Transición de estado no permitida: " + pedido.getEstadoPedido() + " → " + nuevoEstado);
+
+        // System.out.println(mockingDetails(pedidoRepository).printInvocations());
 
         verify(pedidoRepository, never()).save(any());
     }

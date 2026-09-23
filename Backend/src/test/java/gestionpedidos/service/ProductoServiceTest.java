@@ -84,6 +84,8 @@ class ProductoServiceTest {
         // Act
         ProductoDto resultado = productoService.crearProducto(dto);
 
+        // System.out.println(mockingDetails(productoRepository).printInvocations());
+
         // Assert
         assertThat(resultado.getNombre()).isEqualTo(dto.getNombre());
         assertThat(resultado.getPrecio()).isEqualByComparingTo(dto.getPrecio());
@@ -103,6 +105,8 @@ class ProductoServiceTest {
                 .isInstanceOf(PedidoStateException.class)
                 .hasMessageContaining("Ya existe un producto con el nombre: " + dto.getNombre());
 
+        // System.out.println(mockingDetails(productoRepository).printInvocations());
+
         verify(productoRepository, never()).save(any());
     }
 
@@ -115,6 +119,8 @@ class ProductoServiceTest {
         when(productoRepository.findAll()).thenReturn(List.of(producto1, producto2));
 
         List<ProductoDto> resultado = productoService.listarProductos(null, null, null, null);
+
+        // System.out.println(mockingDetails(productoRepository).printInvocations());
 
         assertThat(resultado).hasSize(2);
         // Orden por defecto: alfabético por nombre -> "Menú completo" antes que "Patatas"
@@ -137,6 +143,8 @@ class ProductoServiceTest {
         // Act: pedimos solo los activos de la categoría 1 (Hamburguesas)
         List<ProductoDto> resultado = productoService.listarProductos(true, hamburguesas.getId(), null, null);
 
+        // System.out.println(mockingDetails(productoRepository).printInvocations());
+
         assertThat(resultado).hasSize(1);
         assertThat(resultado.get(0).getNombre()).isEqualTo(p1.getNombre());
     }
@@ -152,6 +160,8 @@ class ProductoServiceTest {
 
         List<ProductoDto> resultado = productoService.listarProductos(null, null, "precio", null);
 
+        // System.out.println(mockingDetails(productoRepository).printInvocations());
+
         assertThat(resultado).extracting(ProductoDto::getNombre)
                 .containsExactly(barato.getNombre(), caro.getNombre());
     }
@@ -165,6 +175,8 @@ class ProductoServiceTest {
         when(productoRepository.findAll()).thenReturn(List.of(barato, caro));
 
         List<ProductoDto> resultado = productoService.listarProductos(null, null, "precio", "DESC");
+
+        // System.out.println(mockingDetails(productoRepository).printInvocations());
 
         assertThat(resultado).extracting(ProductoDto::getNombre)
                 .containsExactly(caro.getNombre(), barato.getNombre());
@@ -189,6 +201,8 @@ class ProductoServiceTest {
 
         ProductoDto resultado = productoService.actualizarProducto(producto.getId(), dto);
 
+        // System.out.println(mockingDetails(productoRepository).printInvocations());
+
         assertThat(resultado.getNombre()).isEqualTo(dto.getNombre());
         assertThat(resultado.getPrecio()).isEqualByComparingTo(dto.getPrecio());
         assertThat(resultado.getNombreCategoria()).isEqualTo(categoriaNueva.getNombre());
@@ -210,6 +224,8 @@ class ProductoServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Producto no encontrado");
 
+        // System.out.println(mockingDetails(productoRepository).printInvocations());
+
         verify(productoRepository, never()).save(any());
     }
 
@@ -229,6 +245,9 @@ class ProductoServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Categoría no encontrada");
 
+        // Aquí falla en categoriaRepository, no en productoRepository
+        // System.out.println(mockingDetails(categoriaRepository).printInvocations());
+
         verify(productoRepository, never()).save(any());
     }
 
@@ -244,6 +263,8 @@ class ProductoServiceTest {
         when(productoRepository.save(any(Producto.class))).thenReturn(producto);
 
         productoService.cambiarEstado(producto.getId(), nuevoEstado);
+
+        // System.out.println(mockingDetails(productoRepository).printInvocations());
 
         // Mismo objeto, ya mutado. Al ser un método void, reutilizar la misma instancia que se mockeó sirve como comprobación
         assertThat(producto.isActivo()).isFalse();
@@ -262,6 +283,8 @@ class ProductoServiceTest {
         assertThatThrownBy(() -> productoService.cambiarEstado(id, activo))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Producto con id " + id + " no encontrado");
+
+        // System.out.println(mockingDetails(productoRepository).printInvocations());
 
         verify(productoRepository, never()).save(any());
     }

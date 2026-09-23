@@ -58,6 +58,8 @@ public class CategoriaServiceTest {
         // Act
         List<CategoriaDto> resultado = categoriaService.listarCategorias();
 
+        // System.out.println(mockingDetails(categoriaRepository).printInvocations());
+
         // Assert
         // Nos aseguramos de que devuelva todas las categorías disponibles (2)
         assertThat(resultado).hasSize(2);
@@ -79,6 +81,8 @@ public class CategoriaServiceTest {
 
         CategoriaDto resultado = categoriaService.guardarCategoria(dto);
 
+        // System.out.println(mockingDetails(categoriaRepository).printInvocations());
+
         assertThat(resultado.getNombre()).isEqualTo(dto.getNombre());
 
         verify(categoriaRepository).save(any(Categoria.class));
@@ -95,6 +99,8 @@ public class CategoriaServiceTest {
                 .isInstanceOf(PedidoStateException.class)
                 .hasMessageContaining("Ya existe una categoría con el nombre: " + dto.getNombre());
 
+        // System.out.println(mockingDetails(categoriaRepository).printInvocations());
+
         verify(categoriaRepository, never()).save(any());
     }
 
@@ -106,6 +112,8 @@ public class CategoriaServiceTest {
         when(categoriaRepository.findById(categoria.getId())).thenReturn(Optional.of(categoria));
 
         CategoriaDto resultado = categoriaService.obtenerPorId(categoria.getId());
+
+        // System.out.println(mockingDetails(categoriaRepository).printInvocations());
 
         assertThat(resultado.getId()).isEqualTo(categoria.getId());
     }
@@ -120,5 +128,7 @@ public class CategoriaServiceTest {
         assertThatThrownBy(() -> categoriaService.obtenerPorId(categoriaId))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("La categoría con ID: " + categoriaId + " no existe");
+
+        // System.out.println(mockingDetails(categoriaRepository).printInvocations());
     }
 }

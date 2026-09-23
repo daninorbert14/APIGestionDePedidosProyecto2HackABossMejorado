@@ -58,6 +58,8 @@ public class TerminalServiceTest {
         // Act
         List<TerminalDto> resultado = terminalService.listarTerminales();
 
+        // System.out.println(mockingDetails(terminalRepository).printInvocations());
+
         // Assert
         // Nos aseguramos de que devuelva todas las terminales disponibles (2)
         assertThat(resultado).hasSize(2);
@@ -75,6 +77,8 @@ public class TerminalServiceTest {
 
         TerminalDto resultado = terminalService.buscarTerminalPorId(terminal.getId());
 
+        // System.out.println(mockingDetails(terminalRepository).printInvocations());
+
         assertThat(resultado.getId()).isEqualTo(terminal.getId());
     }
 
@@ -89,6 +93,8 @@ public class TerminalServiceTest {
         assertThatThrownBy(() -> terminalService.buscarTerminalPorId(terminalId))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("La terminal con ID: " + terminalId + " no existe");
+
+        // System.out.println(mockingDetails(terminalRepository).printInvocations());
     }
 
     // Test caso de éxito del método guardarTerminal
@@ -105,6 +111,8 @@ public class TerminalServiceTest {
 
         TerminalDto resultado = terminalService.guardarTerminal(dto);
 
+        // System.out.println(mockingDetails(terminalRepository).printInvocations());
+
         assertThat(resultado.getNombre()).isEqualTo(dto.getNombre());
 
         verify(terminalRepository).save(any(Terminal.class));
@@ -120,6 +128,8 @@ public class TerminalServiceTest {
         assertThatThrownBy(() -> terminalService.guardarTerminal(dto))
                 .isInstanceOf(PedidoStateException.class)
                 .hasMessageContaining("Ya existe una terminal con el nombre: " + dto.getNombre());
+
+        // System.out.println(mockingDetails(terminalRepository).printInvocations());
 
         verify(terminalRepository, never()).save(any());
     }
