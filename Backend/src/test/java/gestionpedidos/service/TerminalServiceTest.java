@@ -46,7 +46,7 @@ public class TerminalServiceTest {
 
     // *** TESTS ***
 
-    // Test del método listarTerminales
+    // Test de listarTerminales
     @Test
     void listarTerminalesDeberiaDevolverTodas() {
         // Arrange
@@ -68,7 +68,7 @@ public class TerminalServiceTest {
     }
 
 
-    // Test caso de éxito del método buscarTerminalPorId
+    // Test caso de éxito de buscarTerminalPorId
     @Test
     void buscarTerminalPorIdDeberiaDevolverlaCuandoExiste() {
         Terminal terminal = crearTerminal(1L, "Terminal 1");
@@ -83,7 +83,7 @@ public class TerminalServiceTest {
     }
 
 
-    // Test caso de error del método buscarTerminalPorId. Terminal no encontrada
+    // Test caso de error de buscarTerminalPorId. Terminal no encontrada
     @Test
     void buscarTerminalPorIdDeberiaLanzarExcepcionCuandoNoLaEncuentra() {
         Long terminalId = 1L;
@@ -92,12 +92,12 @@ public class TerminalServiceTest {
 
         assertThatThrownBy(() -> terminalService.buscarTerminalPorId(terminalId))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("La terminal con ID: " + terminalId + " no existe");
+                .hasMessageContaining("La terminal con ID " + terminalId + " no existe");
 
         // System.out.println(mockingDetails(terminalRepository).printInvocations());
     }
 
-    // Test caso de éxito del método crearTerminal
+    // Test caso de éxito de crearTerminal
     @Test
     void crearTerminalDeberiaGuardarlaCuandoElNombreNoExiste() {
         CrearTerminalDto dto = crearTerminalDto("Terminal 1");
@@ -118,7 +118,7 @@ public class TerminalServiceTest {
         verify(terminalRepository).save(any(Terminal.class));
     }
 
-    // Test caso de error del método crearTerminal. Nombre de terminal ya existente
+    // Test caso de error de crearTerminal. Nombre de terminal ya existente
     @Test
     void crearTerminalDeberiaLanzarExcepcionCuandoElNombreYaExiste() {
         CrearTerminalDto dto = crearTerminalDto("Terminal 1");
@@ -127,7 +127,7 @@ public class TerminalServiceTest {
 
         assertThatThrownBy(() -> terminalService.crearTerminal(dto))
                 .isInstanceOf(PedidoStateException.class)
-                .hasMessageContaining("Ya existe una terminal con el nombre: " + dto.getNombre());
+                .hasMessageContaining("Ya existe una terminal con el nombre " + dto.getNombre());
 
         // System.out.println(mockingDetails(terminalRepository).printInvocations());
 

@@ -28,7 +28,7 @@ public class CategoriaService {
     public CategoriaDto crearCategoria(CrearCategoriaDto crearCategoriaDto) {
         // Evita categorías con el mismo nombre
         if (categoriaRepository.existsByNombre(crearCategoriaDto.getNombre())) {
-            throw new PedidoStateException("Ya existe una categoría con el nombre: " + crearCategoriaDto.getNombre());
+            throw new PedidoStateException("Ya existe una categoría con el nombre " + crearCategoriaDto.getNombre());
         }
 
         Categoria nuevaCategoria = new Categoria();
@@ -40,7 +40,7 @@ public class CategoriaService {
     // Obtener categorias por id
     public CategoriaDto obtenerPorId(Long id) {
         return toDto(categoriaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("La categoría con ID: " + id + " no existe")));
+                .orElseThrow(() -> new ResourceNotFoundException("La categoría con ID " + id + " no existe")));
     }
 
     // *** MÉTODOS DE MAPEO ***

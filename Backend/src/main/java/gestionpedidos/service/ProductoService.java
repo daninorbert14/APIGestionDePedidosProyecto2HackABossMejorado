@@ -26,7 +26,7 @@ public class ProductoService {
     public ProductoDto crearProducto(CrearProductoDto dto) {
         // Evita productos con el mismo nombre
         if (productoRepository.existsByNombre(dto.getNombre())) {
-            throw new PedidoStateException("Ya existe un producto con el nombre: " + dto.getNombre());
+            throw new PedidoStateException("Ya existe un producto con el nombre " + dto.getNombre());
         }
 
         Categoria categoria = categoriaRepository.findById(dto.getCategoriaId())
@@ -100,7 +100,7 @@ public class ProductoService {
 
         Producto producto = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Producto con id " + id + " no encontrado"));
+                        "El producto con ID " + id + " no existe"));
         producto.setActivo(activo);
         productoRepository.save(producto);
     }

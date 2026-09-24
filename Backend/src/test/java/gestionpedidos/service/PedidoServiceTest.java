@@ -86,10 +86,7 @@ class PedidoServiceTest {
     }
 
     private PedidoProductoRequestDto crearPedidoProductoRequestDto(Long productoId, int cantidad) {
-        PedidoProductoRequestDto dto = new PedidoProductoRequestDto();
-        dto.setProductoId(productoId);
-        dto.setCantidad(cantidad);
-        return dto;
+        return new PedidoProductoRequestDto(productoId, cantidad);
     }
 
     // *** TESTS ***

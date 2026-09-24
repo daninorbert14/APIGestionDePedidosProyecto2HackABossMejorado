@@ -26,7 +26,7 @@ public class TerminalService {
     // Método para buscar una terminal mediante su Id
     public TerminalDto buscarTerminalPorId(Long id) {
         Terminal terminal = terminalRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("La terminal con ID: " + id + " no existe"));
+                .orElseThrow(() -> new ResourceNotFoundException("La terminal con ID " + id + " no existe"));
         return toDto(terminal);
     }
 
@@ -34,7 +34,7 @@ public class TerminalService {
     public TerminalDto crearTerminal(CrearTerminalDto nuevaTerminalDto) {
         // Evita terminales con el mismo nombre
         if (terminalRepository.existsByNombre(nuevaTerminalDto.getNombre())) {
-            throw new PedidoStateException("Ya existe una terminal con el nombre: " + nuevaTerminalDto.getNombre());
+            throw new PedidoStateException("Ya existe una terminal con el nombre " + nuevaTerminalDto.getNombre());
         }
 
         Terminal terminal = new Terminal();

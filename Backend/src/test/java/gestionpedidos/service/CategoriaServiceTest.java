@@ -39,9 +39,7 @@ public class CategoriaServiceTest {
     }
 
     private CrearCategoriaDto crearCategoriaDto(String nombre) {
-        CrearCategoriaDto crearCategoriaDto = new CrearCategoriaDto();
-        crearCategoriaDto.setNombre(nombre);
-        return crearCategoriaDto;
+        return new CrearCategoriaDto(nombre);
     }
 
     // *** TESTS ***
@@ -97,7 +95,7 @@ public class CategoriaServiceTest {
 
         assertThatThrownBy(() -> categoriaService.crearCategoria(dto))
                 .isInstanceOf(PedidoStateException.class)
-                .hasMessageContaining("Ya existe una categoría con el nombre: " + dto.getNombre());
+                .hasMessageContaining("Ya existe una categoría con el nombre " + dto.getNombre());
 
         // System.out.println(mockingDetails(categoriaRepository).printInvocations());
 
@@ -127,7 +125,7 @@ public class CategoriaServiceTest {
 
         assertThatThrownBy(() -> categoriaService.obtenerPorId(categoriaId))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("La categoría con ID: " + categoriaId + " no existe");
+                .hasMessageContaining("La categoría con ID " + categoriaId + " no existe");
 
         // System.out.println(mockingDetails(categoriaRepository).printInvocations());
     }

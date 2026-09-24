@@ -16,6 +16,7 @@ import java.util.Map;
 @RequestMapping("/api/productos")
 @RequiredArgsConstructor // Lombok genera el constructor con los campos final
 public class ProductoController {
+
     private final ProductoService productoService;
 
     // Crear

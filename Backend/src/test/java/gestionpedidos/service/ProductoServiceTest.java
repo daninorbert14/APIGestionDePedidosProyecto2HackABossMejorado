@@ -44,32 +44,21 @@ class ProductoServiceTest {
     }
 
     private Producto crearProducto(Long id, String nombre, String precio, boolean activo, Categoria categoria) {
-        Producto producto = new Producto();
-        producto.setId(id);
-        producto.setNombre(nombre);
-        producto.setPrecio(new BigDecimal(precio));
-        producto.setActivo(activo);
-        producto.setCategoria(categoria);
-        return producto;
+        return new Producto(id, nombre, new BigDecimal(precio), activo, categoria);
     }
 
-    private CrearProductoDto crearProductoDto(String nombre, String precio, boolean activo, Long categoriaId) {
-        CrearProductoDto dto = new CrearProductoDto();
-        dto.setNombre(nombre);
-        dto.setPrecio(new BigDecimal(precio));
-        dto.setActivo(activo);
-        dto.setCategoriaId(categoriaId);
-        return dto;
+    private CrearProductoDto crearCrearProductoDto(String nombre, String precio, boolean activo, Long categoriaId) {
+        return new CrearProductoDto(nombre, new BigDecimal(precio), activo, categoriaId);
     }
 
     // *** TESTS ***
 
-    // Test caso de éxito del método crearProducto
+    // Test caso de éxito de crearProducto
     @Test
     void crearProductoDeberiaGuardarloCuandoNombreNoExiste() {
         // Arrange
         Categoria categoria = crearCategoria(1L, "Hamburguesas");
-        CrearProductoDto dto = crearProductoDto("Hamburguesa clásica", "8.50", true, categoria.getId());
+        CrearProductoDto dto = crearCrearProductoDto("Hamburguesa clásica", "8.50", true, categoria.getId());
 
         when(productoRepository.existsByNombre(dto.getNombre())).thenReturn(false);
         when(categoriaRepository.findById(categoria.getId())).thenReturn(Optional.of(categoria));
@@ -94,16 +83,16 @@ class ProductoServiceTest {
         verify(productoRepository).save(any(Producto.class));
     }
 
-    // Test caso de error del método crearProducto. Nombre ya existente
+    // Test caso de error de crearProducto. Nombre ya existente
     @Test
     void crearProductoDeberiaLanzarExcepcionCuandoNombreYaExiste() {
-        CrearProductoDto dto = crearProductoDto("Hamburguesa clásica", "8.50", true, 1L);
+        CrearProductoDto dto = crearCrearProductoDto("Hamburguesa clásica", "8.50", true, 1L);
 
         when(productoRepository.existsByNombre(dto.getNombre())).thenReturn(true);
 
         assertThatThrownBy(() -> productoService.crearProducto(dto))
                 .isInstanceOf(PedidoStateException.class)
-                .hasMessageContaining("Ya existe un producto con el nombre: " + dto.getNombre());
+                .hasMessageContaining("Ya existe un producto con el nombre " + dto.getNombre());
 
         // System.out.println(mockingDetails(productoRepository).printInvocations());
 
@@ -130,7 +119,7 @@ class ProductoServiceTest {
 
     // Test listarProductos: filtra por categoría además de por estado activo
     @Test
-    void listarProductosDeberiaFiltrarPorActivoYCategoria() {
+    void listarProductosDeberiaDevolverTodosFiltradosPorActivoYCategoria() {
         Categoria hamburguesas = crearCategoria(1L, "Hamburguesas");
         Categoria bebidas = crearCategoria(2L, "Bebidas");
 
@@ -151,7 +140,7 @@ class ProductoServiceTest {
 
     // Test listarProductos: ordena por precio ascendente por defecto
     @Test
-    void listarProductosDeberiaOrdenarPorPrecioAscendentePorDefecto() {
+    void listarProductosDeberiaDevolverTodosOrdenadosPorPrecioAscendentePorDefecto() {
         Producto barato = crearProducto(1L, "Patatas", "3.00", true, crearCategoria(1L, "Snacks"));
         Producto caro = crearProducto(2L, "Menú completo", "15.00", true, crearCategoria(2L, "Menús"));
 
@@ -168,7 +157,7 @@ class ProductoServiceTest {
 
     // Test listarProductos: ordena por precio, pero en descendente cuando se pide DESC
     @Test
-    void listarProductosDeberiaOrdenarPorPrecioDescendenteCuandoSePide() {
+    void listarProductosDeberiaDevolverTodosOrdenadosPorPrecioDescendenteCuandoSePide() {
         Producto barato = crearProducto(1L, "Patatas", "3.00", true, crearCategoria(1L, "Snacks"));
         Producto caro = crearProducto(2L, "Menú completo", "15.00", true, crearCategoria(2L, "Menús"));
 
@@ -182,7 +171,7 @@ class ProductoServiceTest {
                 .containsExactly(caro.getNombre(), barato.getNombre());
     }
 
-    // Test caso de éxito del método actualizarProducto
+    // Test caso de éxito de actualizarProducto
     @Test
     void actualizarProductoDeberiaGuardarloCuandoIdExiste() {
         // El producto tal y como estaba guardado ANTES de la actualización
@@ -193,7 +182,7 @@ class ProductoServiceTest {
         Categoria categoriaNueva = crearCategoria(1L, "Hamburguesas");
 
         // Datos "nuevos" que llegan en el DTO para actualizar
-        CrearProductoDto dto = crearProductoDto("Hamburguesa premium", "12.50", true, categoriaNueva.getId());
+        CrearProductoDto dto = crearCrearProductoDto("Hamburguesa premium", "12.50", true, categoriaNueva.getId());
 
         when(productoRepository.findById(producto.getId())).thenReturn(Optional.of(producto));
         when(categoriaRepository.findById(dto.getCategoriaId())).thenReturn(Optional.of(categoriaNueva));
@@ -210,11 +199,11 @@ class ProductoServiceTest {
         verify(productoRepository).save(any(Producto.class));
     }
 
-    // Test caso de error del método actualizarProducto. Producto no encontrado
+    // Test caso de error de actualizarProducto. Producto no encontrado
     @Test
     void actualizarProductoDeberiaLanzarExcepcionCuandoProductoNoSeEncuentra() {
         Long id = 1L;
-        CrearProductoDto dto = crearProductoDto("Hamburguesa clásica", "8.50", true, 1L);
+        CrearProductoDto dto = crearCrearProductoDto("Hamburguesa clásica", "8.50", true, 1L);
 
         /* En los tests de "caso de error", el mock siempre debe simular el mismo id/nombre que usa el Act
         devolviendo el valor "vacío" correspondiente (Optional.empty(), false, etc.) — nunca un id distinto al que se llama */
@@ -229,14 +218,14 @@ class ProductoServiceTest {
         verify(productoRepository, never()).save(any());
     }
 
-    // Test caso de error del método actualizarProducto. Categoría no encontrada
+    // Test caso de error de actualizarProducto. Categoría no encontrada
     @Test
     void actualizarProductoDeberiaLanzarExcepcionCuandoCategoriaNoSeEncuentra() {
         Categoria categoriaProducto = crearCategoria(1L, "Hamburguesas");
         Producto producto = crearProducto(1L, "Hamburguesa clásica", "8.50", true, categoriaProducto);
 
         Categoria categoriaBuscada = crearCategoria(2L, "Patatas");
-        CrearProductoDto dto = crearProductoDto("Hamburguesa clásica", "8.50", true, categoriaBuscada.getId());
+        CrearProductoDto dto = crearCrearProductoDto("Hamburguesa clásica", "8.50", true, categoriaBuscada.getId());
 
         when(productoRepository.findById(producto.getId())).thenReturn(Optional.of(producto));
         when(categoriaRepository.findById(categoriaBuscada.getId())).thenReturn(Optional.empty());
@@ -251,7 +240,7 @@ class ProductoServiceTest {
         verify(productoRepository, never()).save(any());
     }
 
-    // Test caso de éxito del método cambiarEstado
+    // Test caso de éxito de cambiarEstado
     @Test
     void cambiarEstadoDeberiaCambiarloCuandoExiste() {
         boolean nuevoEstado = false; // lo desactivamos, para que el cambio sea visible
@@ -272,7 +261,7 @@ class ProductoServiceTest {
         verify(productoRepository).save(producto);
     }
 
-    // Test caso de error del método cambiarEstado
+    // Test caso de error de cambiarEstado. Producto no existente
     @Test
     void cambiarEstadoDeberiaLanzarExcepcionCuandoNoExiste() {
         Long id = 1L;
@@ -282,7 +271,7 @@ class ProductoServiceTest {
 
         assertThatThrownBy(() -> productoService.cambiarEstado(id, activo))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("Producto con id " + id + " no encontrado");
+                .hasMessageContaining("El producto con ID " + id + " no existe");
 
         // System.out.println(mockingDetails(productoRepository).printInvocations());
 
