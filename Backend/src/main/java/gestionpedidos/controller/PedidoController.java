@@ -19,6 +19,11 @@ public class PedidoController {
 
     private final PedidoService pedidoService;
 
+    @GetMapping
+    public ResponseEntity<List<PedidoDto>> listarPedidosYPorEstado(@RequestParam(required = false) EstadoPedido estado) {
+        return ResponseEntity.ok(pedidoService.listarPedidos(estado));
+    }
+
     @PostMapping
     public ResponseEntity<Map<String, Object>> registrarPedido(@Valid @RequestBody CrearPedidoDto crearPedidoDto) {
         PedidoDto pedidoDto = pedidoService.registrarPedido(crearPedidoDto);
@@ -37,18 +42,13 @@ public class PedidoController {
         return ResponseEntity.ok(pedidoService.eliminarProductoDePedido(pedidoId, productoId, cantidad));
     }
 
-    @PatchMapping("/{pedidoId}/estado")
-    public ResponseEntity<PedidoDto> cambiarEstadoDelPedido(@PathVariable Long pedidoId, @RequestBody EstadoPedidoRequestDto dto) {
-        return ResponseEntity.ok(pedidoService.gestionarEstadoDelPedido(pedidoId, dto.getEstado()));
-    }
-
     @GetMapping("/codigo/{codigo}")
     public ResponseEntity<PedidoDto> obtenerPedidoPorCodigo(@PathVariable String codigo) {
         return ResponseEntity.ok(pedidoService.obtenerPedidoPorCodigo(codigo));
     }
 
-    @GetMapping
-    public ResponseEntity<List<PedidoDto>> listarPedidosYPorEstado(@RequestParam(required = false) EstadoPedido estado) {
-        return ResponseEntity.ok(pedidoService.listarPedidos(estado));
+    @PatchMapping("/{pedidoId}/estado")
+    public ResponseEntity<PedidoDto> cambiarEstadoDelPedido(@PathVariable Long pedidoId, @RequestBody EstadoPedidoRequestDto dto) {
+        return ResponseEntity.ok(pedidoService.cambiarEstadoDelPedido(pedidoId, dto.getEstado()));
     }
 }

@@ -166,7 +166,7 @@ public class PedidoService {
 
 
     // Gestion del cambio de estados de un pedido
-    public PedidoDto gestionarEstadoDelPedido(Long idPedido, EstadoPedido nuevoEstado) {
+    public PedidoDto cambiarEstadoDelPedido(Long idPedido, EstadoPedido nuevoEstado) {
         Pedido pedido = pedidoRepository.findById(idPedido)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido con ID " + idPedido + " no encontrado"));
 
