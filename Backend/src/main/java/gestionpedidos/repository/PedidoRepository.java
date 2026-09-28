@@ -20,7 +20,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     @Query("""
             SELECT new gestionpedidos.dto.TerminalMasUtilizadaDto(p.terminal.nombre, COUNT(p))
             FROM Pedido p
-            GROUP BY p.terminal
+            GROUP BY p.terminal.id, p.terminal.nombre
             ORDER BY COUNT(p) DESC
             """)
     List<TerminalMasUtilizadaDto> obtenerRankingDeTerminales();

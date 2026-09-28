@@ -281,7 +281,7 @@ DB_PASSWORD=
 ## Documentación API (Swagger)
 
 Una vez ejecutado el proyecto:
-http://localhost:8080/swagger-ui/index.html
+http://localhost:8080/doc/swagger-ui.html
 
 ### Colección Postman
 
@@ -350,10 +350,6 @@ Al no depender de una base de datos real, la suite completa se ejecuta en milise
 Funcionalidades identificadas como mejoras técnicas a implementar en futuras iteraciones:
 
 - **Filtros en base de datos**: los listados actuales cargan todos los registros en memoria y filtran con streams de Java. Con volumen alto de datos conviene migrar a `findByActivoTrue()`, `@Query`, `Specification` o `Pageable` para que sea la base de datos quien filtre.
-
-- **Productos más vendidos**: endpoint `GET /api/estadisticas/productos-mas-vendidos` que agregue las líneas de pedido por producto y devuelva un ranking.
-
-- **Terminal más utilizada**: endpoint `GET /api/estadisticas/terminal-mas-utilizada` que cuente pedidos por terminal.
 
 - **Paginación**: añadir `Pageable` a los listados de pedidos y productos para no devolver colecciones completas en entornos con muchos registros.
 

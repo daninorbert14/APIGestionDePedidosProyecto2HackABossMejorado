@@ -32,7 +32,7 @@ public class Pedido {
     // Y EnumType.STRING para decir a la bb que guarde el nombre del estado como texto, si no lo haría como un número
     private EstadoPedido estadoPedido;
 
-    @ManyToOne// Relación muchos a uno, muchos pedidos pertenecen a una determinada terminal
+    @ManyToOne // Relación muchos a uno, muchos pedidos pertenecen a una determinada terminal
     @JoinColumn(name = "terminal_id", nullable = false)
     //Para relacionarlo con el id de Terminal. Esta es la foreing key que se relaciona con la primary key de Terminal
     private Terminal terminal;

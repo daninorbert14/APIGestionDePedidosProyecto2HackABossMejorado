@@ -15,7 +15,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query("""
             SELECT new gestionpedidos.dto.ProductoMasVendidoDto(pp.producto.nombre, SUM(pp.cantidad))
             FROM PedidoProducto pp
-            GROUP BY pp.producto
+            GROUP BY pp.producto.id, pp.producto.nombre
             ORDER BY SUM(pp.cantidad) DESC
             """)
     List<ProductoMasVendidoDto> obtenerProductosMasVendidos();
