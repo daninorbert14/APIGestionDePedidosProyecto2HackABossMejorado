@@ -46,9 +46,9 @@ public class PedidoRepositoryTest {
         Terminal terminalMasUsada = terminalRepository.save(crearTerminal("Terminal 2"));
 
         // La más usada se crea la segunda (id mayor): si el ORDER BY fallara, el test lo detectaría
-        Pedido pedido1 = pedidoRepository.save(crearPedido("PED-0001", terminalMenosUsada));
-        Pedido pedido2 = pedidoRepository.save(crearPedido("PED-0002", terminalMasUsada));
-        Pedido pedido3 = pedidoRepository.save(crearPedido("PED-0003", terminalMasUsada));
+        pedidoRepository.save(crearPedido("PED-0001", terminalMenosUsada));
+        pedidoRepository.save(crearPedido("PED-0002", terminalMasUsada));
+        pedidoRepository.save(crearPedido("PED-0003", terminalMasUsada));
 
         // Act
         List<TerminalMasUtilizadaDto> resultado = pedidoRepository.obtenerRankingDeTerminales();

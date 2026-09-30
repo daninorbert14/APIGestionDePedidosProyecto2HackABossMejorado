@@ -42,13 +42,6 @@ public class PedidoControllerTest {
 
     // *** MÉTODOS FACTORÍA ***
 
-    private Terminal crearTerminal(Long id) {
-        Terminal terminal = new Terminal();
-        terminal.setId(id);
-        terminal.setNombre("Terminal " + id);
-        return terminal;
-    }
-
     private Producto crearProducto(Long id, String nombre, String precio, boolean activo) {
         Producto producto = new Producto();
         producto.setId(id);
