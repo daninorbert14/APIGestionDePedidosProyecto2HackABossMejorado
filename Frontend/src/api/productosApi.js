@@ -3,15 +3,6 @@ import { fetchJSON } from "./fetchHelper";
 
 const PRODUCTOS_URL = `${API_URL}/productos`;
 
-// Sin usar
-/* export async function crearProducto(dto) {
-    return fetchJSON(PRODUCTOS_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(dto)
-    });
-} */
-
 export async function listarProductos(activo, categoriaId, orden, tipoOrden) {
     // Con URLSearcParams se construyen query params automáticamente: 
     // "activo=true" y "orden=precio" genera "activo=true&orden=precio"
@@ -31,18 +22,3 @@ export async function listarProductos(activo, categoriaId, orden, tipoOrden) {
 
     return fetchJSON(url);
 }
-
-// Sin usar
-/* export async function actualizarProducto(id, dto) {
-    return fetchJSON(`${PRODUCTOS_URL}/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(dto)
-    });
-} */
-
-// Sin usar
-/* export async function cambiarEstadoDeProducto(id, activo) {
-    return fetchJSON(`${PRODUCTOS_URL}/${id}/estado?activo=${activo}`,
-        { method: "PATCH" });
-} */

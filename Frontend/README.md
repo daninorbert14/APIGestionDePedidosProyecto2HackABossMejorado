@@ -154,7 +154,7 @@ Es necesario que el backend esté en ejecución antes de iniciar el frontend.
 
 ### 1. Clonar el repositorio
 
-```bash
+```bashA
 git clone <url-del-repositorio>
 ```
 
