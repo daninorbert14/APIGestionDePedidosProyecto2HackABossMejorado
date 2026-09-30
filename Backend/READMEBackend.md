@@ -89,6 +89,10 @@ No se permiten saltos de estado.
 - Obtener pedido por código único generado automáticamente
 - Listar pedidos con filtro opcional por estado, ordenados por fecha ascendente
 
+### Estadísticas
+- Ranking de productos más vendidos (cantidad total agregada)
+- Ranking de terminales por número de pedidos gestionados
+
 ---
 
 ## Endpoints principales
@@ -120,6 +124,11 @@ DELETE /api/pedidos/{pedidoId}/productos/{productoId}?cantidad=2
 PATCH  /api/pedidos/{pedidoId}/estado
 GET    /api/pedidos/codigo/{codigo}
 GET    /api/pedidos?estado=LISTO
+
+### Estadísticas
+
+GET /api/estadisticas/productos-mas-vendidos
+GET /api/estadisticas/ranking-terminales
 
 ---
 
@@ -264,6 +273,12 @@ spring.datasource.password=${DB_PASSWORD}
 
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
+
+# "always" si no tenemos la BBDD ya cargada y "never" si ya estaba creada
+spring.sql.init.mode=never
+
+# Origen permitido para CORS (el frontend en desarrollo)
+app.cors.allowed-origin=${FRONTEND_URL:http://localhost:5173}
 ```
 
 Crea un archivo `.env` o configura las variables de entorno antes de ejecutar:
@@ -273,6 +288,8 @@ DB_URL=jdbc:mysql://localhost:3306/gestion_pedidos_bd?createDatabaseIfNotExist=t
 DB_USERNAME=root
 
 DB_PASSWORD=
+
+`FRONTEND_URL` es opcional: si no se define, el backend acepta peticiones desde `http://localhost:5173` (el puerto por defecto de Vite en desarrollo). En un despliegue real, se define esta variable apuntando al dominio del frontend en producción, y el backend dejará de aceptar peticiones desde `localhost`.
 
 > **Importante:** no subas credenciales reales al repositorio. Añade `.env` a tu `.gitignore`.
 
@@ -314,7 +331,50 @@ mvn spring-boot:run
 
 ## Tests
 
-El proyecto incluye una suite de tests unitarios de la capa `Service`, escritos con **JUnit 5** y **Mockito**, que cubre toda la lógica de negocio de la aplicación de forma aislada — sin necesidad de base de datos ni de levantar el contexto de Spring.
+El proyecto incluye una suite de tests en varias capas, escritos con **JUnit 5**, **Mockito** y **Spring Test**, que cubre desde la lógica de negocio aislada hasta el flujo completo de una petición HTTP real contra una base de datos.
+
+### Tests unitarios de `Service` (Mockito)
+
+Cubren la lógica de negocio de forma aislada, sin base de datos ni contexto de Spring — los repositorios se simulan con `@Mock` y se inyectan con `@InjectMocks`.
+
+| Clase de test | Qué cubre |
+|---|---|
+| `ProductoServiceTest` | Creación, actualización, listado (filtrado por estado/categoría y ordenación por precio/nombre), y activación/desactivación de productos |
+| `PedidoServiceTest` | Registro de pedidos, gestión de líneas de producto (añadir sumando cantidad o creando línea nueva, eliminar total o parcialmente), consulta por código, y la máquina de estados de transición (`CREADO → PREPARACION → LISTO → PAGADO → ENTREGADO`) |
+| `CategoriaServiceTest` | Listado, creación (con validación de duplicados) y consulta de categorías |
+| `TerminalServiceTest` | Listado, creación (con validación de duplicados) y consulta de terminales |
+| `EstadisticasServiceTest` | Delegación correcta hacia los repositorios de productos más vendidos y ranking de terminales |
+
+Cada método público está cubierto con su caso de éxito y sus casos de error correspondientes (recursos no encontrados, nombres duplicados, transiciones de estado no permitidas, validaciones de negocio), siguiendo el patrón **Arrange / Act / Assert**.
+
+### Tests de la capa web (`@WebMvcTest` + `MockMvc`)
+
+Verifican que cada controller expone correctamente sus endpoints, con el `Service` mockeado: rutas, verbos HTTP, deserialización del body, y que `GlobalExceptionHandler` traduce cada excepción de negocio al código HTTP correcto (`404` para recursos no encontrados, `400` para validaciones, `409` para conflictos de duplicados).
+
+- `ProductoControllerTest`, `PedidoControllerTest`, `CategoriaControllerTest`, `TerminalControllerTest`, `EstadisticasControllerTest`
+
+### Tests de repositorio (`@DataJpaTest`)
+
+Las dos consultas de agregación (`@Query` con `SUM`/`COUNT` y `GROUP BY`) se prueban contra una base de datos real en memoria (H2), no contra un mock — la única forma de verificar que el SQL generado hace lo que debe.
+
+- `ProductoRepositoryTest` — ranking de productos más vendidos
+- `PedidoRepositoryTest` — ranking de terminales por uso
+
+### Test de integración de extremo a extremo (`TestRestTemplate`)
+
+`PedidoIntegrationTest` levanta la aplicación completa en un puerto aleatorio y ejecuta el flujo real de crear categoría → producto → terminal → pedido vía peticiones HTTP reales, contra la base de datos H2 del perfil `test` — sin ningún mock de por medio. Confirma que todas las capas encajan entre sí, incluido el cálculo real del total del pedido.
+
+### Perfil de test aislado
+
+Los tests de `@DataJpaTest` y el de integración usan `src/test/resources/application-test.properties`, con una base de datos H2 en memoria (`spring.jpa.hibernate.ddl-auto=create-drop`) — la suite completa no depende de tener MySQL arrancado ni de ninguna variable de entorno, y es reproducible en cualquier máquina.
+
+### Cómo ejecutarlos
+
+Desde IntelliJ, botón derecho sobre `src/test/java` → `Run 'All Tests'`, o desde terminal:
+
+```bash
+mvn test
+```
 
 ### Cobertura
 
