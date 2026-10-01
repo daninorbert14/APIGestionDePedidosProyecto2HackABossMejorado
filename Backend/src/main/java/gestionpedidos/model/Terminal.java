@@ -15,6 +15,7 @@ public class Terminal {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(nullable = false, unique = true)
     private String nombre;
     @OneToMany (mappedBy = "terminal")
     private List<Pedido> listaPedidos;
