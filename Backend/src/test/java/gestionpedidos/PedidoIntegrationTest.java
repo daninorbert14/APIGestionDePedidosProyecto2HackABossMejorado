@@ -26,6 +26,7 @@ class PedidoIntegrationTest {
     @Autowired
     private TestRestTemplate client;
 
+    @SuppressWarnings("unchecked")
     @Test
     void flujoCompletoDeRegistrarPedidoDeberiaFuncionarDeExtremoAExtremo() {
         // 1. Creamos una categoría de verdad, vía HTTP, contra la app entera
@@ -42,6 +43,7 @@ class PedidoIntegrationTest {
         // 2. Creamos un producto real, usando esa categoría
         CrearProductoDto productoDto = new CrearProductoDto(
                 "Hamburguesa clásica", new BigDecimal("8.50"), true, categoriaId);
+        // Map raw es la única forma de usar postForEntity con una respuesta de tipo Map
         ResponseEntity<Map> responseProducto = client.postForEntity(
                 "/api/productos", productoDto, Map.class);
         assertThat(responseProducto.getStatusCode()).isEqualTo(HttpStatus.CREATED);
