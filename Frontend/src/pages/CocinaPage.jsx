@@ -26,7 +26,7 @@ export default function CocinaPage() {
       await cambiarEstadoDelPedido(pedidoId, { estado: nuevoEstado });
       toast.success("Estado actualizado");
       await refetch(); // recargamos las listas para que el pedido desaparezca de la columna actual
-    } catch (err) {
+    } catch {
       toast.error("Error al actualizar el estado del pedido");
     }
   }
@@ -65,12 +65,14 @@ export default function CocinaPage() {
           titulo="Nuevos"
           pedidos={pedidosCreados}
           onAvanzar={handleAvanzar}
+          onRefetch={refetch}
           colorClass="cocina-columna--nuevos"
         />
         <ListaPedidos
           titulo="En preparación"
           pedidos={pedidosEnPreparacion}
           onAvanzar={handleAvanzar}
+          onRefetch={refetch}
           colorClass="cocina-columna--preparacion"
         />
       </div>

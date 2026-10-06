@@ -14,7 +14,7 @@ export function useTerminales() {
             const data = await listarTerminales();
             setTerminales(data);
             setError(null);
-        } catch (e) {
+        } catch {
             setError("Servidor no disponible. Inténtalo de nuevo más tarde.");
         } finally {
             setLoading(false);
@@ -22,6 +22,7 @@ export function useTerminales() {
     }, []); // sin dependencias, no hay filtros que puedan cambiar
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchTerminales();
     }, [fetchTerminales]); // se ejecuta una vez al montar el componente
 

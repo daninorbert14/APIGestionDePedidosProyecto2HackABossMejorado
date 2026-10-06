@@ -18,7 +18,7 @@ export function usePedidosPorEstados(estados) {
       setPedidos(listas.flat());
       setError(null);
       setLastUpdated(new Date());
-    } catch (err) {
+    } catch {
       setError("Servidor no disponible. Inténtalo de nuevo más tarde.");
     } finally {
       setLoading(false);
@@ -27,6 +27,7 @@ export function usePedidosPorEstados(estados) {
 
   // Polling automático cada 15 s
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchPedidos();
     const interval = setInterval(fetchPedidos, POLL_INTERVAL_MS);
     return () => clearInterval(interval); // limpia al desmontar

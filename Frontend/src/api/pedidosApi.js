@@ -11,22 +11,24 @@ export async function registrarPedido(crearPedidoDto) {
     });
 }
 
-// Sin usar
-/* export async function agregarProductoAPedido(pedidoId, dto) {
+export async function agregarProductoAPedido(pedidoId, dto) {
     return fetchJSON(`${PEDIDOS_URL}/${pedidoId}/productos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dto)
     });
-} */
+}
 
-// Sin usar
-/* export async function eliminarProductoDePedido(pedidoId, productoId, cantidad) {
+export async function eliminarProductoDePedido(pedidoId, dto) {
     return fetchJSON(
-        `${PEDIDOS_URL}/${pedidoId}/productos/${productoId}?cantidad=${cantidad}`,
-        { method: "DELETE" }
+        `${PEDIDOS_URL}/${pedidoId}/productos`,
+        {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dto)
+        }
     );
-} */
+}
 
 export async function cambiarEstadoDelPedido(pedidoId, dto) {
     return fetchJSON(`${PEDIDOS_URL}/${pedidoId}/estado`, {
@@ -36,10 +38,9 @@ export async function cambiarEstadoDelPedido(pedidoId, dto) {
     });
 }
 
-// Sin usar
-/* export async function buscarPedidoPorCodigo(codigo) {
+export async function buscarPedidoPorCodigo(codigo) {
     return fetchJSON(`${PEDIDOS_URL}/codigo/${codigo}`);
-} */
+}
 
 export async function listarPedidosYPorEstado(estado) {
     // En función de si recibe el query param que no es obligatorio, la url es una u otra

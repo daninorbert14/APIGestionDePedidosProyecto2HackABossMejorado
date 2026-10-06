@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { ESTADOS_PEDIDO } from "../../utils/constants";
+import PedidoLineaInput from "./PedidoLineaInput";
 
-export default function PedidoCard({ pedido, onAvanzar }) {
+export default function PedidoCard({ pedido, onAvanzar, onRefetch }) {
   //el botón esta trabajando?
   const [advancing, setAdvancing] = useState(false);
 
@@ -31,7 +32,13 @@ export default function PedidoCard({ pedido, onAvanzar }) {
       <ul className="pedido-card__productos">
         {pedido.productos?.map((p) => (
           <li key={p.productoId} className="pedido-card__producto">
-            <span className="pedido-card__cantidad">{p.cantidad}×</span>
+            <PedidoLineaInput
+              pedidoId={pedido.id}
+              productoId={p.productoId}
+              cantidadActual={p.cantidad}
+              pedidoEstado={pedido.estado}
+              onCambio={onRefetch}
+            />
             <span className="pedido-card__nombre">{p.nombreProducto}</span>
           </li>
         ))}

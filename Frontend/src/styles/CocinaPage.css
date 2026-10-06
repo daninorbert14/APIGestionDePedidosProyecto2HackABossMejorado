@@ -38,14 +38,12 @@
 
 /* Botón de refresco manual */
 .cocina-header__btn-actualizar {
+  background-color: var(--color-boton-1);
+  border-radius: var(--borde-radio-boton);
+  color: var(--text-h);
   font-size: 14px;
   padding: 6px 14px;
-  border-radius: var(--borde-radio-boton);
-  border: 1px solid var(--border);
-  background-color: var(--color-boton-1);
-  color: var(--text-h);
   cursor: pointer;
-  transition: background 0.15s;
 }
 
 .cocina-header__btn-actualizar:hover {
@@ -198,7 +196,7 @@
 
 .pedido-card__producto {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   font-size: 14px;
   color: var(--text-h);
@@ -239,4 +237,45 @@
 .pedido-card__btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ── Cantidad de cada línea del pedido (botones +/− y texto "N ×") ── */
+/* Botones y cantidad en fila, con un pequeño hueco entre todos */
+.pedido-linea-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Mismo color y peso que el nombre del producto (en las dos ramas del componente) */
+.pedido-linea-input-cantidad {
+  color: var(--color-texto-oscuro);
+  font-weight: 500;
+}
+
+/* Margen extra entre los botones y la cantidad. Solo en la rama con botones,
+   para no desalinear el "4 ×" de los pedidos en preparación */
+.pedido-linea-input .pedido-linea-input-cantidad {
+  margin-left: 0.5rem;
+}
+
+.pedido-linea-input-btn-plus {
+  border-radius: var(--borde-radio-boton);
+  background-color: var(--color-boton-2);
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pedido-linea-input-btn-minus {
+  
+  border-radius: var(--borde-radio-boton);
+  background-color: var(--color-boton-2);
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

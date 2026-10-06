@@ -1,6 +1,6 @@
 import PedidoCard from "./PedidoCard";
 
-export default function ListaPedidos({ titulo, pedidos, onAvanzar, colorClass }) {
+export default function ListaPedidos({ titulo, pedidos, onAvanzar, onRefetch, colorClass }) {
   return (
     <section className={`cocina-columna ${colorClass}`}>
       <h2 className="cocina-columna__titulo">
@@ -11,7 +11,7 @@ export default function ListaPedidos({ titulo, pedidos, onAvanzar, colorClass })
         <p className="cocina-columna__vacia">Sin pedidos ahora mismo</p>
       ) : (
         pedidos.map((p) => (
-          <PedidoCard key={p.id} pedido={p} onAvanzar={onAvanzar} />
+          <PedidoCard key={p.id} pedido={p} onAvanzar={onAvanzar} onRefetch={onRefetch} />
         ))
       )}
     </section>

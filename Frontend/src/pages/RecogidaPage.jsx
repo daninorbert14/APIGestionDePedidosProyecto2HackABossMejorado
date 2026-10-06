@@ -1,21 +1,65 @@
-import { usePedidosPorEstados } from '../hooks/usePedidosPorEstados';
-import { cambiarEstadoDelPedido } from '../api/pedidosApi';
-import { Loading } from '../components/common/Loading';
-import ErrorMessage from '../components/common/ErrorMessage';
-import '../styles/RecogidaPage.css';
-import { toast } from 'sonner';
+import { useState } from "react";
+import { usePedidosPorEstados } from "../hooks/usePedidosPorEstados";
+import {
+  buscarPedidoPorCodigo,
+  cambiarEstadoDelPedido,
+} from "../api/pedidosApi";
+import { Loading } from "../components/common/Loading";
+import ErrorMessage from "../components/common/ErrorMessage";
+import "../styles/RecogidaPage.css";
+import { toast } from "sonner";
+import { ESTADOS_PEDIDO } from "../utils/constants";
 
+// Clase extra de la tarjeta según el estado (LISTO es el verde por defecto)
+const claseSegunEstado = (estado) => {
+  if (estado === ESTADOS_PEDIDO.PAGADO) return "pedido-listo-card--pagado";
+  if (estado === ESTADOS_PEDIDO.LISTO) return "";
+  return "pedido-listo-card--sin-accion"; // CREADO, PREPARACION o ENTREGADO
+};
+
+const handleAccion = async (id, estadoActual) => {
+  try {
+    const nuevoEstado = estadoActual === "LISTO" ? "PAGADO" : "ENTREGADO";
+    await cambiarEstadoDelPedido(id, { estado: nuevoEstado });
+    toast.success(
+      estadoActual === "LISTO"
+        ? "¡Pedido cobrado!"
+        : "¡Pedido entregado con éxito!",
+    );
+    return true;
+  } catch {
+    toast.error("Error al actualizar el pedido");
+    return false;
+  }
+};
 
 const RecogidaPage = () => {
-  const { pedidos, loading, error } = usePedidosPorEstados(['LISTO', 'PAGADO']);
+  const { pedidos, loading, error } = usePedidosPorEstados(["LISTO", "PAGADO"]);
+  const [codigoBusqueda, setCodigoBusqueda] = useState("");
+  const [mostrarPedidoEncontrado, setMostrarPedidoEncontrado] = useState(false);
+  const [pedidoEncontrado, setPedidoEncontrado] = useState(null);
+  const puedeGestionarse = [
+    ESTADOS_PEDIDO.LISTO,
+    ESTADOS_PEDIDO.PAGADO,
+  ].includes(pedidoEncontrado?.estado);
 
-  const handleAccion = async (id, estadoActual) => {
+  const handleBuscar = async () => {
+    // Se recorta una vez por su hubiese espacios en blanco por error y se usa en todo el método
+    const codigo = codigoBusqueda.trim();
+
+    if (!codigo) {
+      toast.warning("Introduce un código de pedido");
+      setMostrarPedidoEncontrado(false);
+      return;
+    }
     try {
-      const nuevoEstado = estadoActual === 'LISTO' ? 'PAGADO' : 'ENTREGADO';
-      await cambiarEstadoDelPedido(id, { estado: nuevoEstado });
-      toast.success(estadoActual === 'LISTO' ? '¡Pedido cobrado!' : '¡Pedido entregado con éxito!');
-    } catch (err) {
-      toast.error("Error al actualizar el pedido");
+      const data = await buscarPedidoPorCodigo(codigo);
+      setPedidoEncontrado(data);
+      setMostrarPedidoEncontrado(true);
+      toast.success(`Pedido encontrado: ${data.codigo}`);
+    } catch {
+      toast.error("Pedido no encontrado con ese código");
+      setMostrarPedidoEncontrado(false);
     }
   };
 
@@ -25,6 +69,62 @@ const RecogidaPage = () => {
   return (
     <div className="recogida-container">
       <h2>Pantalla de Recogida y Cobro</h2>
+
+      <div className="busqueda-bar">
+        <input
+          type="text"
+          placeholder="Buscar por código del pedido (ej. PED-AB12CD34)"
+          value={codigoBusqueda}
+          onChange={(e) => setCodigoBusqueda(e.target.value)}
+          className="busqueda-input"
+        />
+        <button className="btn-buscar" onClick={handleBuscar}>
+          Buscar
+        </button>
+      </div>
+
+      {/* Modo: solo muestra el pedido encontrado, oculta la lista */}
+      {mostrarPedidoEncontrado && pedidoEncontrado && (
+        <div
+          className={`pedido-listo-card pedido-listo-card--busqueda ${claseSegunEstado(pedidoEncontrado.estado)}`}
+        >
+          <h1>{pedidoEncontrado.codigo}</h1>
+          <p className="pedido-listo-card__total">
+            Total: <strong>{pedidoEncontrado.total.toFixed(2)} €</strong>
+          </p>
+          <div className="acciones-card">
+            {puedeGestionarse ? (
+              <button
+                className="btn-entregar"
+                onClick={async () => {
+                  const exito = await handleAccion(
+                    pedidoEncontrado.id,
+                    pedidoEncontrado.estado,
+                  );
+                  if (exito) setMostrarPedidoEncontrado(false);
+                }}
+              >
+                {pedidoEncontrado.estado === ESTADOS_PEDIDO.LISTO
+                  ? "💶 Cobrar Pedido"
+                  : "Entregado al Cliente ✓"}
+              </button>
+            ) : (
+              <p>
+                Estado: {pedidoEncontrado.estado} (no se gestiona desde
+                Recogida)
+              </p>
+            )}
+            <button
+              className="btn-cancelar-busqueda"
+              onClick={() => setMostrarPedidoEncontrado(false)}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Lista normal de pedidos por estados (visible cuando no hay búsqueda activa) */}
       <p>Los siguientes pedidos están pendientes de pago o entrega:</p>
 
       <div className="pedidos-listos-grid">
@@ -33,10 +133,10 @@ const RecogidaPage = () => {
             No hay pedidos en esta zona en este momento.
           </p>
         ) : (
-          pedidos.map(pedido => (
+          pedidos.map((pedido) => (
             <div
               key={pedido.id}
-              className={`pedido-listo-card ${pedido.estado === 'PAGADO' ? 'pedido-listo-card--pagado' : ''}`}
+              className={`pedido-listo-card ${pedido.estado === "PAGADO" ? "pedido-listo-card--pagado" : ""}`}
             >
               <h1>{pedido.codigo}</h1>
               <p className="pedido-listo-card__total">
@@ -46,7 +146,9 @@ const RecogidaPage = () => {
                 className="btn-entregar"
                 onClick={() => handleAccion(pedido.id, pedido.estado)}
               >
-                {pedido.estado === 'LISTO' ? '💶 Cobrar Pedido' : 'Entregado al Cliente ✓'}
+                {pedido.estado === "LISTO"
+                  ? "💶 Cobrar Pedido"
+                  : "Entregado al Cliente ✓"}
               </button>
             </div>
           ))

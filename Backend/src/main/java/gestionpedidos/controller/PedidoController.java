@@ -37,9 +37,9 @@ public class PedidoController {
         return ResponseEntity.ok(pedidoService.agregarProductosAPedido(pedidoId, dto));
     }
 
-    @DeleteMapping("/{pedidoId}/productos/{productoId}")
-    public ResponseEntity<ProductosPedidoDto> eliminarProductoDePedido(@PathVariable Long pedidoId, @PathVariable Long productoId, @RequestParam Integer cantidad) {
-        return ResponseEntity.ok(pedidoService.eliminarProductoDePedido(pedidoId, productoId, cantidad));
+    @DeleteMapping("/{pedidoId}/productos")
+    public ResponseEntity<ProductosPedidoDto> eliminarProductoDePedido(@PathVariable Long pedidoId, @Valid @RequestBody PedidoProductoRequestDto dto) {
+        return ResponseEntity.ok(pedidoService.eliminarProductoDePedido(pedidoId, dto));
     }
 
     @GetMapping("/codigo/{codigo}")

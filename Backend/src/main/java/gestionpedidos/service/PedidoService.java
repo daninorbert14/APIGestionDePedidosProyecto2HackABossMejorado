@@ -96,6 +96,9 @@ public class PedidoService {
     public ProductosPedidoDto agregarProductosAPedido(Long idPedido, PedidoProductoRequestDto dto) {
         Pedido pedido = obtenerPedidoPorId(idPedido);
 
+        // VALIDACIÓN: Solo se permite modificar pedidos en estado CREADO
+        validarPedidoModificable(pedido);
+
         Producto producto = obtenerProductoPorId(dto.getProductoId());
 
         // Comprobar si el producto no está activo
@@ -103,7 +106,7 @@ public class PedidoService {
 
         // Buscar si ya existe el producto en el pedido
         Optional<PedidoProducto> existente = pedido.getLineasPedido().stream()
-                .filter(pp -> pp.getProducto().getId().equals(producto.getId()))
+                .filter(pp -> pp.getProducto().getId().equals(dto.getProductoId()))
                 .findFirst();
 
         PedidoProducto pedidoProducto;
@@ -130,22 +133,25 @@ public class PedidoService {
     }
 
     // Eliminar producto de un pedido
-    public ProductosPedidoDto eliminarProductoDePedido(Long pedidoId, Long productoId, Integer cantidad) {
+    public ProductosPedidoDto eliminarProductoDePedido(Long pedidoId, PedidoProductoRequestDto dto) {
         // Buscar el pedido
         Pedido pedido = obtenerPedidoPorId(pedidoId);
 
+        // VALIDACIÓN: Solo se permite modificar pedidos en estado CREADO
+        validarPedidoModificable(pedido);
+
         // Buscar la linea de productos del pedido
         PedidoProducto linea = pedido.getLineasPedido().stream()
-                .filter(pp -> pp.getProducto().getId().equals(productoId))
+                .filter(pp -> pp.getProducto().getId().equals(dto.getProductoId()))
                 .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("El producto con ID " + productoId + " no está en el pedido"));
+                .orElseThrow(() -> new ResourceNotFoundException("El producto con ID " + dto.getProductoId() + " no está en el pedido"));
 
-        if (cantidad >= linea.getCantidad()) {
+        if (dto.getCantidad() >= linea.getCantidad()) {
             // eliminar toda la línea
             pedido.getLineasPedido().remove(linea);
         } else {
             // restar cantidad
-            linea.setCantidad(linea.getCantidad() - cantidad);
+            linea.setCantidad(linea.getCantidad() - dto.getCantidad());
         }
 
         // Recalcular el total
@@ -163,7 +169,6 @@ public class PedidoService {
 
         return pedidoToPedidoDto(pedido);
     }
-
 
     // Gestion del cambio de estados de un pedido
     public PedidoDto cambiarEstadoDelPedido(Long idPedido, EstadoPedido nuevoEstado) {
@@ -224,6 +229,15 @@ public class PedidoService {
                 .map(pp -> pp.getPrecioUnitario().multiply(BigDecimal.valueOf(pp.getCantidad())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                 .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    // Solo se pueden modificar pedidos que siguen en estado CREADO
+    private void validarPedidoModificable(Pedido pedido) {
+        if (pedido.getEstadoPedido() != EstadoPedido.CREADO) {
+            throw new BadRequestException(
+                    "No se puede modificar un pedido que ya ha avanzado de estado (está en "
+                            + pedido.getEstadoPedido() + ")");
+        }
     }
 
     // *** MÉTODOS DE MAPEO ***
