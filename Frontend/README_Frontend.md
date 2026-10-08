@@ -212,7 +212,7 @@ npm run build
 
 ## Autores
 
-Laura Arias
+Laura Arias 
 
 Daniel Norbert
 
