@@ -84,7 +84,9 @@ No se permiten saltos de estado.
 ### Pedidos
 - Crear pedido desde una terminal con productos iniciales
 - Añadir productos a un pedido existente (acumula cantidad si ya existe la línea)
+- Modificar cantidades de un pedido en estado CREADO (añadir o quitar unidades) en Cocina
 - Eliminar productos de forma total o parcial vía `?cantidad=N`
+- El pedido se elimina automáticamente cuando su última línea es removida en Cocina
 - Cambiar estado del pedido respetando el flujo definido
 - Obtener pedido por código único generado automáticamente
 - Listar pedidos con filtro opcional por estado, ordenados por fecha ascendente
@@ -120,7 +122,7 @@ PATCH  /api/productos/{id}/estado?activo=true
 
 POST   /api/pedidos
 POST   /api/pedidos/{pedidoId}/productos
-DELETE /api/pedidos/{pedidoId}/productos/{productoId}?cantidad=2
+DELETE /api/pedidos/{pedidoId}/eliminar-producto/{productoId}?cantidad=2
 PATCH  /api/pedidos/{pedidoId}/estado
 GET    /api/pedidos/codigo/{codigo}
 GET    /api/pedidos?estado=LISTO
@@ -378,10 +380,12 @@ mvn test
 
 ### Cobertura
 
+55 tests en total (29 controller + 26 service).
+
 | Clase de test | Qué cubre |
 |---|---|
 | `ProductoServiceTest` | Creación, actualización, listado (filtrado por estado/categoría y ordenación por precio/nombre), y activación/desactivación de productos |
-| `PedidoServiceTest` | Registro de pedidos, gestión de líneas de producto (añadir sumando cantidad o creando línea nueva, eliminar total o parcialmente), consulta por código, y la máquina de estados de transición (`CREADO → PREPARACION → LISTO → PAGADO → ENTREGADO`) |
+| `PedidoServiceTest` | Registro de pedidos, gestión de líneas de producto (añadir sumando cantidad o creando línea nueva, eliminar total o parcialmente, eliminación automática del pedido cuando queda vacío), consulta por código, y la máquina de estados de transición (`CREADO → PREPARACION → LISTO → PAGADO → ENTREGADO`) |
 | `CategoriaServiceTest` | Listado, creación (con validación de duplicados) y consulta de categorías |
 | `TerminalServiceTest` | Listado, creación (con validación de duplicados) y consulta de terminales |
 

@@ -18,7 +18,7 @@ export default function PedidoLineaInput({ pedidoId, productoId, cantidadActual,
         await agregarProductoAPedido(pedidoId, { productoId, cantidad: nuevaCantidad - cantidadActual });
         toast.success(`Unidad(es) actualizada(s) en producto: +${nuevaCantidad - cantidadActual}`);
       } else {
-        await eliminarProductoDePedido(pedidoId, { productoId, cantidad: cantidadActual - nuevaCantidad });
+        await eliminarProductoDePedido(pedidoId, productoId, cantidadActual - nuevaCantidad);
         toast.success(`Unidad(es) actualizada(s) en producto: -${cantidadActual - nuevaCantidad}`);
       }
       onCambio();

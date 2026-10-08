@@ -19,14 +19,10 @@ export async function agregarProductoAPedido(pedidoId, dto) {
     });
 }
 
-export async function eliminarProductoDePedido(pedidoId, dto) {
+export async function eliminarProductoDePedido(pedidoId, productoId, cantidad) {
     return fetchJSON(
-        `${PEDIDOS_URL}/${pedidoId}/productos`,
-        {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(dto)
-        }
+        `${PEDIDOS_URL}/${pedidoId}/eliminar-producto/${productoId}?cantidad=${cantidad}`,
+        { method: "DELETE" }
     );
 }
 

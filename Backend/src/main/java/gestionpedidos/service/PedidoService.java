@@ -133,7 +133,14 @@ public class PedidoService {
     }
 
     // Eliminar producto de un pedido
-    public ProductosPedidoDto eliminarProductoDePedido(Long pedidoId, PedidoProductoRequestDto dto) {
+    /* En el service el argumento "cantidad" lo ponemos como int en vez de Integer porque Integer puede ser null, int no.
+    De esta manera, evitamos que el compilador pueda llamar al método con null y el controller sigue funcionando con Integer
+    ya que Java lo convierte a int automáticamente. También evitamos tener que cubrir el caso en los tests. */
+    public ProductosPedidoDto eliminarProductoDePedido(Long pedidoId, Long productoId, int cantidad) {
+        if (cantidad < 1) {
+            throw new BadRequestException("La cantidad debe ser al menos 1");
+        }
+
         // Buscar el pedido
         Pedido pedido = obtenerPedidoPorId(pedidoId);
 
@@ -142,22 +149,26 @@ public class PedidoService {
 
         // Buscar la linea de productos del pedido
         PedidoProducto linea = pedido.getLineasPedido().stream()
-                .filter(pp -> pp.getProducto().getId().equals(dto.getProductoId()))
+                .filter(pp -> pp.getProducto().getId().equals(productoId))
                 .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("El producto con ID " + dto.getProductoId() + " no está en el pedido"));
+                .orElseThrow(() -> new ResourceNotFoundException("El producto con ID " + productoId + " no está en el pedido"));
 
-        if (dto.getCantidad() >= linea.getCantidad()) {
+        if (cantidad >= linea.getCantidad()) {
             // eliminar toda la línea
             pedido.getLineasPedido().remove(linea);
         } else {
             // restar cantidad
-            linea.setCantidad(linea.getCantidad() - dto.getCantidad());
+            linea.setCantidad(linea.getCantidad() - cantidad);
+        }
+
+        // Si el pedido se queda vacío tras eliminar la última línea, se elimina
+        if (pedido.getLineasPedido().isEmpty()) {
+            pedidoRepository.delete(pedido);
+            return null;
         }
 
         // Recalcular el total
         pedido.setTotal(calcularTotalDelPedido(pedido));
-
-        // Guardar cambios
         pedidoRepository.save(pedido);
 
         return pedidoProductoToDto(linea);

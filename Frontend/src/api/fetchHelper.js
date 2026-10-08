@@ -10,6 +10,11 @@ export async function fetchJSON(url, options = {}, timeoutMs = 8000) {
             ...options,
             signal: controller.signal
         });
+
+        if (response.status === 204) {
+            return null;
+        }
+
         const data = await response.json();
 
         if (!response.ok) {

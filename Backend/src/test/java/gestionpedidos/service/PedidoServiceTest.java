@@ -12,6 +12,8 @@ import gestionpedidos.repository.ProductoRepository;
 import gestionpedidos.repository.TerminalRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -289,6 +291,24 @@ class PedidoServiceTest {
         verify(pedidoRepository, never()).save(any());
     }
 
+    // Test caso de error de agregarProductosAPedido. Pedido no modificable
+    @Test
+    void agregarProductosAPedidoDeberiaLanzarExcepcionCuandoPedidoNoEsModificable() {
+        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.PREPARACION, "0.00", List.of());
+        PedidoProductoRequestDto dto = crearPedidoProductoRequestDto(10L, 2);
+
+        when(pedidoRepository.findById(pedido.getId())).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> pedidoService.agregarProductosAPedido(pedido.getId(), dto))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("No se puede modificar un pedido que ya ha avanzado de estado (está en "
+                        + pedido.getEstadoPedido() + ")");
+
+        // El estado se comprueba ANTES de buscar el producto: ni se consulta ni se guarda nada
+        verifyNoInteractions(productoRepository);
+        verify(pedidoRepository, never()).save(any());
+    }
+
     // Test caso de error de agregarProductosAPedido. Producto no encontrado
     @Test
     void agregarProductosAPedidoDeberiaLanzarExcepcionCuandoNoSeEncuentraElProducto() {
@@ -327,70 +347,112 @@ class PedidoServiceTest {
         verify(pedidoRepository, never()).save(any());
     }
 
-    // Test caso de éxito de eliminarProductoDePedido. Eliminar línea entera
-    @Test
-    void eliminarProductoDePedidoDeberiaEliminarLaLineaEnteraCuandoCantidadEsMayorOIgualQueLaCantidadExistente() {
-        Producto producto = crearProducto(10L, "Hamburguesa clásica", "8.50", true);
-        PedidoProducto linea = crearLineaPedido(producto, 2); // había 2 unidades en el pedido
-
-        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "17.00", List.of(linea));
-
-        int cantidadAEliminar = 2; // cantidad >= 2 (la cantidad que ya había) -> elimina la línea entera
-
-        when(pedidoRepository.findById(pedido.getId())).thenReturn(Optional.of(pedido));
-        when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
-
-        ProductosPedidoDto resultado = pedidoService.eliminarProductoDePedido(pedido.getId(), producto.getId(), cantidadAEliminar);
-
-        // System.out.println(mockingDetails(pedidoRepository).printInvocations());
-
-        // El DTO devuelto describe la línea tal y como estaba antes de eliminarla
-        assertThat(resultado.getProductoId()).isEqualTo(producto.getId());
-        assertThat(resultado.getCantidad()).isEqualTo(2);
-        assertThat(resultado.getSubtotal()).isEqualByComparingTo("17.00");
-        // Comprobamos el efecto real: la línea ya no está en el pedido
-        assertThat(pedido.getLineasPedido()).doesNotContain(linea);
-        verify(pedidoRepository).save(any(Pedido.class));
-    }
-
     // Test caso de éxito de eliminarProductoDePedido. Restar cantidad, pero mantener línea
     @Test
     void eliminarProductoDePedidoDeberiaRestarCantidadCuandoCantidadEsMenorQueElTotal() {
-        Producto producto = crearProducto(10L, "Hamburguesa clásica", "8.50", true);
-        PedidoProducto linea = crearLineaPedido(producto, 2);
+        Producto hamburguesa = crearProducto(10L, "Hamburguesa clásica", "8.50", true);
+        Producto patatas = crearProducto(20L, "Patatas", "3.00", true);
 
-        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "17.00", List.of(linea));
+        // Dos líneas para luego distinguir precios del Subtotal y Total del pedido
+        PedidoProducto lineaHamburguesa = crearLineaPedido(hamburguesa, 2);
+        PedidoProducto lineaPatatas = crearLineaPedido(patatas, 1);
+        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "20.00",
+                List.of(lineaHamburguesa, lineaPatatas));
 
         int cantidadAEliminar = 1; // cantidad < 2 -> restar cantidad y conservar la línea
+        PedidoProductoRequestDto dto = crearPedidoProductoRequestDto(hamburguesa.getId(), cantidadAEliminar);
 
         when(pedidoRepository.findById(pedido.getId())).thenReturn(Optional.of(pedido));
         when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
 
-        ProductosPedidoDto resultado = pedidoService.eliminarProductoDePedido(pedido.getId(), producto.getId(), cantidadAEliminar);
+        ProductosPedidoDto resultado = pedidoService.eliminarProductoDePedido(pedido.getId(), dto.getProductoId(), dto.getCantidad());
 
         // System.out.println(mockingDetails(pedidoRepository).printInvocations());
 
         // El resultado refleja el estado ya mutado de la línea (2 - 1 = 1), a diferencia del caso "eliminar entera"
-        assertThat(resultado.getProductoId()).isEqualTo(producto.getId());
+        assertThat(resultado.getProductoId()).isEqualTo(hamburguesa.getId());
         assertThat(resultado.getCantidad()).isEqualTo(1);
+        // resultado.getSubtotal() sale de pedidoProductoToDto(linea), que calcula precioUnitario × cantidad de esa línea
         assertThat(resultado.getSubtotal()).isEqualByComparingTo("8.50");
         // La línea sigue en el pedido (no se elimina), con la cantidad ya actualizada
-        assertThat(pedido.getLineasPedido()).hasSize(1);
-        assertThat(linea.getCantidad()).isEqualTo(1);
+        assertThat(pedido.getLineasPedido()).containsExactly(lineaHamburguesa, lineaPatatas);
+        assertThat(lineaHamburguesa.getCantidad()).isEqualTo(1);
+        // pedido.getTotal() lo fija la línea pedido.setTotal(calcularTotalDelPedido(pedido)), suma todas las líneas del pedido
+        assertThat(pedido.getTotal()).isEqualByComparingTo("11.50"); // 8.50 + 3.00, la suma de todas
 
         verify(pedidoRepository).save(any(Pedido.class));
+    }
+
+    // Test caso de éxito de eliminarProductoDePedido. Quitar una línea entera, quedando otras en el pedido
+    @Test
+    void eliminarProductoDePedidoDeberiaQuitarLaLineaEnteraYConservarElPedidoCuandoQuedanOtrasLineas() {
+        Producto hamburguesa = crearProducto(10L, "Hamburguesa clásica", "8.50", true);
+        Producto patatas = crearProducto(20L, "Patatas", "3.00", true);
+
+        PedidoProducto lineaHamburguesa = crearLineaPedido(hamburguesa, 2);
+        PedidoProducto lineaPatatas = crearLineaPedido(patatas, 1);
+        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "20.00",
+                List.of(lineaHamburguesa, lineaPatatas));
+
+        when(pedidoRepository.findById(pedido.getId())).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
+
+        // cantidad (2) >= cantidad de la línea (2): se quita la línea entera
+        ProductosPedidoDto resultado = pedidoService.eliminarProductoDePedido(pedido.getId(), hamburguesa.getId(), 2);
+
+        // El DTO describe la línea tal y como estaba antes de quitarla
+        assertThat(resultado.getProductoId()).isEqualTo(hamburguesa.getId());
+        assertThat(resultado.getCantidad()).isEqualTo(2);
+        // La línea ya no está, la otra sí
+        assertThat(pedido.getLineasPedido()).containsExactly(lineaPatatas);
+        // Total calculado a mano: solo quedan las patatas, 3.00 * 1
+        assertThat(pedido.getTotal()).isEqualByComparingTo("3.00");
+        verify(pedidoRepository).save(pedido);
+        verify(pedidoRepository, never()).delete(any(Pedido.class));
+    }
+
+    // Test caso de éxito de eliminarProductoDePedido. Eliminar última línea entera (pedido queda vacío y se elimina)
+    @Test
+    void eliminarProductoDePedidoDeberiaEliminarElPedidoCuandoSeQuitaLaUltimaLinea() {
+        Producto producto = crearProducto(10L, "Hamburguesa clásica", "8.50", true);
+
+        PedidoProducto linea = crearLineaPedido(producto, 2);
+        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "17.00", List.of(linea));
+
+        int cantidadAEliminar = 2;
+        PedidoProductoRequestDto dto = crearPedidoProductoRequestDto(producto.getId(), cantidadAEliminar);
+
+        when(pedidoRepository.findById(pedido.getId())).thenReturn(Optional.of(pedido));
+
+        ProductosPedidoDto resultado = pedidoService.eliminarProductoDePedido(pedido.getId(), dto.getProductoId(), dto.getCantidad());
+
+        assertThat(resultado).isNull();
+        assertThat(pedido.getLineasPedido()).isEmpty();
+        verify(pedidoRepository).delete(pedido);
+        verify(pedidoRepository, never()).save(any(Pedido.class));
+    }
+
+    // Test caso de error de eliminarProductoDePedido. Cantidad inválida (0 y negativa)
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1})
+    void eliminarProductoDePedidoDeberiaLanzarExcepcionCuandoLaCantidadEsInvalida(int cantidadInvalida) {
+        assertThatThrownBy(() -> pedidoService.eliminarProductoDePedido(1L, 10L, cantidadInvalida))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("La cantidad debe ser al menos 1");
+
+        // Falla antes de consultar la base de datos
+        verifyNoInteractions(pedidoRepository);
     }
 
     // Test caso de error de eliminarProductoDePedido. Pedido inexistente
     @Test
     void eliminarProductoDePedidoDeberiaLanzarExcepcionCuandoElPedidoNoExiste() {
-        Long productoId = 10L;
         Long pedidoId = 1L;
-        int cantidadAEliminar = 1;
+        PedidoProductoRequestDto dto = crearPedidoProductoRequestDto(10L, 1);
 
         when(pedidoRepository.findById(pedidoId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> pedidoService.eliminarProductoDePedido(pedidoId, productoId, cantidadAEliminar))
+        assertThatThrownBy(() -> pedidoService.eliminarProductoDePedido(pedidoId, dto.getProductoId(), dto.getCantidad()))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Pedido con ID " + pedidoId + " no encontrado");
 
@@ -399,27 +461,76 @@ class PedidoServiceTest {
         verify(pedidoRepository, never()).save(any());
     }
 
+    // Test caso de error de eliminarProductoDePedido. Pedido no modificable
+    @Test
+    void eliminarProductoDePedidoDeberiaLanzarExcepcionCuandoPedidoNoEsModificable() {
+        Producto producto = crearProducto(10L, "Hamburguesa clásica", "8.50", true);
+
+        PedidoProducto linea = crearLineaPedido(producto, 2);
+        // La línea SÍ existe: así el fallo solo puede venir del estado, no de "no está en el pedido"
+        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.PREPARACION, "17.00", List.of(linea));
+
+        PedidoProductoRequestDto dto = crearPedidoProductoRequestDto(producto.getId(), 1);
+
+        when(pedidoRepository.findById(pedido.getId())).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> pedidoService.eliminarProductoDePedido(pedido.getId(), dto.getProductoId(), dto.getCantidad()))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("No se puede modificar un pedido que ya ha avanzado de estado (está en "
+                        + pedido.getEstadoPedido() + ")");
+
+        // No se tocó nada: la línea sigue igual y no se guardó
+        assertThat(pedido.getLineasPedido()).hasSize(1);
+        assertThat(linea.getCantidad()).isEqualTo(2);
+        verify(pedidoRepository, never()).save(any());
+        verify(pedidoRepository, never()).delete(any(Pedido.class));
+    }
+
     // Test caso de error de eliminarProductoDePedido. Línea de producto no figura en el pedido
     @Test
     void eliminarProductoDePedidoDeberiaLanzarExcepcionCuandoLaLineaNoEstaEnElPedido() {
         Producto productoBuscado = crearProducto(10L, "Hamburguesa clásica", "8.50", true);
         Producto otroProducto = crearProducto(20L, "Patatas", "3.00", true);
-        PedidoProducto lineaDeOtroProducto = crearLineaPedido(otroProducto, 1);
 
+        PedidoProducto lineaDeOtroProducto = crearLineaPedido(otroProducto, 1);
         /* Incluimos un producto distinto del buscado en la línea en vez de dejarla vacía
         para comprobar que el filter funciona de verdad */
         Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "17.00", List.of(lineaDeOtroProducto));
+
         int cantidadAEliminar = 1;
+        PedidoProductoRequestDto dto = crearPedidoProductoRequestDto(productoBuscado.getId(), cantidadAEliminar);
 
         when(pedidoRepository.findById(pedido.getId())).thenReturn(Optional.of(pedido));
 
-        assertThatThrownBy(() -> pedidoService.eliminarProductoDePedido(pedido.getId(), productoBuscado.getId(), cantidadAEliminar))
+        assertThatThrownBy(() -> pedidoService.eliminarProductoDePedido(pedido.getId(), dto.getProductoId(), dto.getCantidad()))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("El producto con ID " + productoBuscado.getId() + " no está en el pedido");
+                .hasMessageContaining("El producto con ID " + dto.getProductoId() + " no está en el pedido");
 
         // System.out.println(mockingDetails(pedidoRepository).printInvocations());
 
         verify(pedidoRepository, never()).save(any());
+        verify(pedidoRepository, never()).delete(any(Pedido.class));
+    }
+
+    // Test caso de éxito de eliminarProductoDePedido. Producto inactivo (quitar siempre debe poder hacerse)
+    @Test
+    void eliminarProductoDePedidoDeberiaPermitirQuitarUnProductoDesactivado() {
+        // El producto se desactivó DESPUÉS de añadirse al pedido
+        Producto producto = crearProducto(10L, "Hamburguesa clásica", "8.50", false);
+
+        PedidoProducto linea = crearLineaPedido(producto, 2);
+        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "17.00", List.of(linea));
+
+        PedidoProductoRequestDto dto = crearPedidoProductoRequestDto(producto.getId(), 2);
+
+        when(pedidoRepository.findById(pedido.getId())).thenReturn(Optional.of(pedido));
+
+        ProductosPedidoDto resultado = pedidoService.eliminarProductoDePedido(pedido.getId(), dto.getProductoId(), dto.getCantidad());
+
+        assertThat(resultado).isNull();
+        assertThat(pedido.getLineasPedido()).isEmpty();
+        verifyNoInteractions(productoRepository);
+        verify(pedidoRepository).delete(pedido);
     }
 
     // Test caso de éxito de obtenerPedidoPorCodigo

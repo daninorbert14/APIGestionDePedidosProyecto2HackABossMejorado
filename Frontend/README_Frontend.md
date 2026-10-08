@@ -46,6 +46,8 @@ Además se utilizan:
 * Listar pedidos en estado CREADO.
 * Listar pedidos en estado PREPARACION.
 * Visualizar el detalle de cada pedido.
+* Modificar cantidades de productos en pedidos CREADO (botones +/− por línea).
+* El pedido desaparece automáticamente cuando se elimina su última línea.
 * Cambiar el estado respetando el flujo definido.
 * Actualización automática de pedidos cada 15 segundos.
 
@@ -54,6 +56,7 @@ Además se utilizan:
 * Listar pedidos en estado LISTO.
 * Cobrar pedidos (LISTO → PAGADO).
 * Entregar pedidos (PAGADO → ENTREGADO).
+* Buscar pedido por código con botón "Buscar".
 * Actualización automática de pedidos cada 15 segundos.
 
 ## Estados del pedido
@@ -86,6 +89,12 @@ GET /api/productos
 
 POST /api/pedidos
 
+POST /api/pedidos/{pedidoId}/productos
+
+DELETE /api/pedidos/{pedidoId}/eliminar-producto/{productoId}?cantidad=N
+
+GET /api/pedidos/codigo/{codigo}
+
 GET /api/pedidos?estado=CREADO
 
 GET /api/pedidos?estado=PREPARACION
@@ -112,6 +121,11 @@ PATCH /api/pedidos/{pedidoId}/estado
 src/
 ├── api/
 ├── components/
+│   ├── common/
+│   └── vistaCocina/
+│       ├── ListaPedidos.jsx
+│       ├── PedidoCard.jsx
+│       └── PedidoLineaInput.jsx
 ├── hooks/
 ├── pages/
 ├── router/
@@ -183,7 +197,7 @@ npm run build
 * El frontend depende de que la API backend esté disponible en todo momento.
 * Las validaciones de negocio se realizan exclusivamente en el backend.
 * No existe persistencia local — si se recarga la página, la terminal seleccionada y el carrito se pierden.
-* No se diferencia entre errores HTTP (400, 404, 500) — todos muestran el mismo mensaje genérico.
+* Los errores HTTP se gestionan con mensajes específicos del backend (400, 404, 204).
 
 ## Posibles mejoras
 

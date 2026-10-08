@@ -95,6 +95,15 @@ public class PedidoControllerTest {
 
     // *** TESTS ***
 
+    // Test caso de error general. La ruta no existe
+    @Test
+    void unaRutaInexistenteDeberiaDevolver404() throws Exception {
+        mvc.perform(get("/api/ruta-que-no-existe"))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$['Error: ']").value("Ruta no encontrada: /api/ruta-que-no-existe"));
+    }
+
     // Test de listarPedidos sin filtrar
     @Test
     void listarPedidosDeberiaDevolverTodosLosPedidosSinFiltrarConEstadoOk() throws Exception {
@@ -251,6 +260,20 @@ public class PedidoControllerTest {
                 .andExpect(jsonPath("$.subtotal").value(8.50));
     }
 
+    // Test caso de éxito de agregarProductosAPedido. El body es JSON mal formado
+    @Test
+    void agregarProductosAPedidoDeberiaDevolver400CuandoElJsonEstaMalFormado() throws Exception {
+        mvc.perform(post("/api/pedidos/{pedidoId}/productos", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{esto no es json"))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['Error: ']")
+                        .value("El cuerpo de la petición no es válido: JSON mal formado o valor no permitido"));
+
+        verifyNoInteractions(pedidoService);
+    }
+
     // Test caso de error de agregarProductosAPedido. Pedido no encontrado
     @Test
     void agregarProductosAPedidoDeberiaDevolver404CuandoNoSeEncuentraElPedido() throws Exception {
@@ -267,6 +290,25 @@ public class PedidoControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$['Error: ']")
                         .value("Pedido con ID " + pedidoId + " no encontrado"));
+    }
+
+    // Test caso de error de agregarProductosAPedido. Pedido no modificable
+    @Test
+    void agregarProductosAPedidoDeberiaDevolver400CuandoElPedidoNoEsModificable() throws Exception {
+        Long pedidoId = 1L;
+        PedidoProductoRequestDto dtoEnviado = crearPedidoProductoRequestDto(1L, 1);
+        String mensaje = "No se puede modificar un pedido que ya ha avanzado de estado (está en "
+                + EstadoPedido.PREPARACION + ")";
+
+        when(pedidoService.agregarProductosAPedido(eq(pedidoId), any(PedidoProductoRequestDto.class)))
+                .thenThrow(new BadRequestException(mensaje));
+
+        mvc.perform(post("/api/pedidos/{pedidoId}/productos", pedidoId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dtoEnviado)))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['Error: ']").value(mensaje));
     }
 
     // Test caso de error de agregarProductosAPedido. Producto no encontrado
@@ -310,47 +352,90 @@ public class PedidoControllerTest {
     // Test caso de éxito de eliminarProductoDePedido. Eliminar línea entera
     @Test
     void eliminarProductoDePedidoDeberiaEliminarLaLineaEnteraCuandoCantidadEsMayorOIgualQueLaCantidadExistenteConEstadoOk() throws Exception {
-        Producto producto = crearProducto(1L, "Hamburguesa", "8.50", true);
-        PedidoProducto lineaPedido = crearLineaPedido(producto, 2);
-        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "17.00", List.of(lineaPedido));
+        Long pedidoId = 1L;
+        Long productoId = 1L;
+        Integer cantidad = 2;
         ProductosPedidoDto dtoEsperado = new ProductosPedidoDto(1L, "Hamburguesa", 2,
                 new BigDecimal("8.50"), new BigDecimal("17.00"));
 
-        when(pedidoService.eliminarProductoDePedido(pedido.getId(), producto.getId(), lineaPedido.getCantidad()))
+        when(pedidoService.eliminarProductoDePedido(eq(pedidoId), eq(productoId), eq(cantidad)))
                 .thenReturn(dtoEsperado);
 
-        mvc.perform(delete("/api/pedidos/{pedidoId}/productos/{productoId}", pedido.getId(), producto.getId())
-                        .param("cantidad", "2"))
+        mvc.perform(delete("/api/pedidos/{pedidoId}/eliminar-producto/{productoId}", pedidoId, productoId)
+                        .param("cantidad", String.valueOf(cantidad)))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.productoId").value(1))
                 .andExpect(jsonPath("$.cantidad").value(2))
                 .andExpect(jsonPath("$.subtotal").value(17.00));
+
+        verify(pedidoService).eliminarProductoDePedido(eq(pedidoId), eq(productoId), eq(cantidad));
     }
 
     // Test caso de éxito de eliminarProductoDePedido. Restar cantidad, pero mantener línea
     @Test
     void eliminarProductoDePedidoDeberiaRestarCantidadCuandoCantidadEsMenorQueElTotalConEstadoOk() throws Exception {
-        Producto producto = crearProducto(1L, "Hamburguesa", "8.50", true);
-        PedidoProducto lineaPedido = crearLineaPedido(producto, 2);
-        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "8.50", List.of(lineaPedido));
-        int cantidadAEliminar = 1; // < 2 -> resta y conserva la línea
-        // Resultado ya mutado
+        Long pedidoId = 1L;
+        Long productoId = 1L;
+        Integer cantidad = 1;
         ProductosPedidoDto dtoEsperado = new ProductosPedidoDto(1L, "Hamburguesa", 1,
                 new BigDecimal("8.50"), new BigDecimal("8.50"));
 
-        when(pedidoService.eliminarProductoDePedido(pedido.getId(), producto.getId(), cantidadAEliminar))
+        when(pedidoService.eliminarProductoDePedido(eq(pedidoId), eq(productoId), eq(cantidad)))
                 .thenReturn(dtoEsperado);
 
-        mvc.perform(delete("/api/pedidos/{pedidoId}/productos/{productoId}", pedido.getId(), producto.getId())
-                        .param("cantidad", String.valueOf(cantidadAEliminar)))
+        mvc.perform(delete("/api/pedidos/{pedidoId}/eliminar-producto/{productoId}", pedidoId, productoId)
+                        .param("cantidad", String.valueOf(cantidad)))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.productoId").value(1))
                 .andExpect(jsonPath("$.cantidad").value(1))
                 .andExpect(jsonPath("$.subtotal").value(8.50));
+
+        verify(pedidoService).eliminarProductoDePedido(eq(pedidoId), eq(productoId), eq(cantidad));
+    }
+
+    // Test caso de éxito de eliminarProductoDePedido. Pedido eliminado (vacío)
+    @Test
+    void eliminarProductoDePedidoDeberiaDevolver204CuandoElPedidoQuedaVacioYElimina() throws Exception {
+        Long pedidoId = 1L;
+        Long productoId = 1L;
+        Integer cantidad = 2;
+
+        when(pedidoService.eliminarProductoDePedido(eq(pedidoId), eq(productoId), eq(cantidad)))
+                .thenReturn(null);
+
+        mvc.perform(delete("/api/pedidos/{pedidoId}/eliminar-producto/{productoId}", pedidoId, productoId)
+                        .param("cantidad", String.valueOf(cantidad)))
+                .andDo(print())
+                .andExpect(status().isNoContent());
+
+        verify(pedidoService).eliminarProductoDePedido(eq(pedidoId), eq(productoId), eq(cantidad));
+    }
+
+    // Test caso de error de eliminarProductoDePedido. Falta el parámetro obligatorio
+    @Test
+    void eliminarProductoDePedidoDeberiaDevolver400CuandoFaltaLaCantidad() throws Exception {
+        mvc.perform(delete("/api/pedidos/{pedidoId}/eliminar-producto/{productoId}", 1L, 1L))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['Error: ']").value("Falta el parámetro obligatorio 'cantidad'"));
+
+        verifyNoInteractions(pedidoService);
+    }
+
+    // Test caso de error de eliminarProductoDePedido. El parámetro tiene el tipo equivocado
+    @Test
+    void eliminarProductoDePedidoDeberiaDevolver400CuandoLaCantidadNoEsUnNumero() throws Exception {
+        mvc.perform(delete("/api/pedidos/{pedidoId}/eliminar-producto/{productoId}", 1L, 1L)
+                        .param("cantidad", "abc"))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['Error: ']").value("El valor 'abc' no es válido para 'cantidad'"));
+
+        verifyNoInteractions(pedidoService);
     }
 
     // Test caso de error de eliminarProductoDePedido. Pedido inexistente
@@ -358,13 +443,13 @@ public class PedidoControllerTest {
     void eliminarProductoDePedidoDeberiaDevolver404CuandoElPedidoNoExiste() throws Exception {
         Long pedidoId = 1L;
         Long productoId = 1L;
-        int cantidadAEliminar = 1;
+        Integer cantidad = 2;
 
-        when(pedidoService.eliminarProductoDePedido(pedidoId, productoId, cantidadAEliminar))
+        when(pedidoService.eliminarProductoDePedido(eq(pedidoId), eq(productoId), eq(cantidad)))
                 .thenThrow(new ResourceNotFoundException("Pedido con ID " + pedidoId + " no encontrado"));
 
-        mvc.perform(delete("/api/pedidos/{pedidoId}/productos/{productoId}", pedidoId, productoId)
-                        .param("cantidad", String.valueOf(cantidadAEliminar)))
+        mvc.perform(delete("/api/pedidos/{pedidoId}/eliminar-producto/{productoId}", pedidoId, productoId)
+                        .param("cantidad", String.valueOf(cantidad)))
                 .andDo(print())
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -372,18 +457,37 @@ public class PedidoControllerTest {
                         .value("Pedido con ID " + pedidoId + " no encontrado"));
     }
 
+    // Test caso de error de eliminarProductoDePedido. Pedido no modificable
+    @Test
+    void eliminarProductoDePedidoDeberiaDevolver400CuandoElPedidoNoEsModificable() throws Exception {
+        Long pedidoId = 1L;
+        Long productoId = 1L;
+        Integer cantidad = 1;
+        String mensaje = "No se puede modificar un pedido que ya ha avanzado de estado (está en "
+                + EstadoPedido.PREPARACION + ")";
+
+        when(pedidoService.eliminarProductoDePedido(eq(pedidoId), eq(productoId), eq(cantidad)))
+                .thenThrow(new BadRequestException(mensaje));
+
+        mvc.perform(delete("/api/pedidos/{pedidoId}/eliminar-producto/{productoId}", pedidoId, productoId)
+                        .param("cantidad", String.valueOf(cantidad)))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['Error: ']").value(mensaje));
+    }
+
     // Test caso de error de eliminarProductoDePedido. Línea de producto no figura en el pedido
     @Test
     void eliminarProductoDePedidoDeberiaDevolver404CuandoLaLineaNoEstaEnElPedido() throws Exception {
-        Pedido pedido = crearPedido(1L, "PED-0001", EstadoPedido.CREADO, "8.50", List.of());
+        Long pedidoId = 1L;
         Long productoId = 1L;
-        int cantidadAEliminar = 1;
+        Integer cantidad = 2;
 
-        when(pedidoService.eliminarProductoDePedido(pedido.getId(), productoId, cantidadAEliminar))
+        when(pedidoService.eliminarProductoDePedido(eq(pedidoId), eq(productoId), eq(cantidad)))
                 .thenThrow(new ResourceNotFoundException("El producto con ID " + productoId + " no está en el pedido"));
 
-        mvc.perform(delete("/api/pedidos/{pedidoId}/productos/{productoId}", pedido.getId(), productoId)
-                        .param("cantidad", String.valueOf(cantidadAEliminar)))
+        mvc.perform(delete("/api/pedidos/{pedidoId}/eliminar-producto/{productoId}", pedidoId, productoId)
+                        .param("cantidad", String.valueOf(cantidad)))
                 .andDo(print())
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -437,6 +541,20 @@ public class PedidoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.estado").value("PREPARACION"));
+    }
+
+    // El body es JSON válido pero con un estado que no existe en el enum
+    @Test
+    void cambiarEstadoDelPedidoDeberiaDevolver400CuandoElEstadoNoExiste() throws Exception {
+        mvc.perform(patch("/api/pedidos/{pedidoId}/estado", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"estado\":\"INVENTADO\"}"))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['Error: ']")
+                        .value("El cuerpo de la petición no es válido: JSON mal formado o valor no permitido"));
+
+        verifyNoInteractions(pedidoService);
     }
 
     // Test caso de error de cambiarEstadoDelPedido. Pedido no encontrado
