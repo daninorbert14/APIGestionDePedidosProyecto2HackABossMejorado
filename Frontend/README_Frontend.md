@@ -193,11 +193,13 @@ npm run build
 ## Suposiciones y limitaciones
 
 * No se implementa autenticación — todos los roles (terminal, cocina, recogida) son accesibles sin login.
-* La gestión del catálogo de productos y categorías se realiza directamente desde el backend o Swagger, no desde el frontend.
+* La gestión del catálogo (productos/categorías/terminales) vive en el backend/Swagger por decisión de diseño — separación backoffice vs. operativo. El frontend se centra en el flujo operativo.
 * El frontend depende de que la API backend esté disponible en todo momento.
 * Las validaciones de negocio se realizan exclusivamente en el backend.
 * No existe persistencia local — si se recarga la página, la terminal seleccionada y el carrito se pierden.
-* Los errores HTTP se gestionan con mensajes específicos del backend (400, 404, 204).
+* Sin accesibilidad implementada.
+* Condición de carrera posible entre el polling automático (15 s) y una acción manual del usuario (p. ej. cobrar un pedido justo cuando se dispara el refresco).
+* Un producto desactivado mientras está en el carrito no se detecta hasta que el backend lo rechaza al enviar el pedido.
 
 ## Posibles mejoras
 
@@ -208,6 +210,7 @@ npm run build
 * Paginación de listados.
 * Mejoras de accesibilidad.
 * Diseño responsive más avanzado.
+* Migrar el polling actual a WebSockets para actualización en tiempo real sin refrescos periódicos.
 * Gestión avanzada de errores HTTP diferenciando respuestas 400, 404 y 500.
 
 ## Autores

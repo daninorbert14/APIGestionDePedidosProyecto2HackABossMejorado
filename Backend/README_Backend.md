@@ -380,7 +380,7 @@ mvn test
 
 ### Cobertura
 
-55 tests en total (29 controller + 26 service).
+108 tests en total (54 controller + 50 service + 3 repository + 1 integración).
 
 | Clase de test | Qué cubre |
 |---|---|

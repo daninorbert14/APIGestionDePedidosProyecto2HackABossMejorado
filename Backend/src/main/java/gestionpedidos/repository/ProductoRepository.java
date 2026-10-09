@@ -13,7 +13,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     /* @Query te deja escribir la consulta a mano encima del método. Se usa el nombre de la clase (PedidoProducto)
     y no el de la tabla (pedidos_productos) para que Hibernate lo reconozca como entidad y la traduzca a SQL real por debajo */
     @Query("""
-            SELECT new gestionpedidos.dto.ProductoMasVendidoDto(pp.producto.nombre, SUM(pp.cantidad))
+            SELECT new gestionpedidos.dto.ProductoMasVendidoDto(pp.producto.id, pp.producto.nombre, SUM(pp.cantidad))
             FROM PedidoProducto pp
             GROUP BY pp.producto.id, pp.producto.nombre
             ORDER BY SUM(pp.cantidad) DESC

@@ -29,11 +29,10 @@ class ProductoRepositoryTest {
 
     // *** MÉTODOS FACTORÍA ***
 
-    // Solo con los argumentos extrictamente necesarios para hacer el test y los obligatorios aunque la query no los use
-    private Categoria crearCategoria(String nombre, List<Producto> productos) {
+    // Solo con los argumentos estrictamente necesarios para hacer el test y los obligatorios aunque la query no los use
+    private Categoria crearCategoria(String nombre) {
         Categoria categoria = new Categoria();
         categoria.setNombre(nombre);
-        categoria.setProductos(productos);
         return categoria;
     }
 
@@ -75,8 +74,8 @@ class ProductoRepositoryTest {
     @Test
     void obtenerProductosMasVendidosDeberiaOrdenarPorCantidadTotalDescendente() {
         // Arrange: aquí SÍ hay que crear y persistir datos reales, no mocks
-        Categoria categoriaHamburguesas = categoriaRepository.save(crearCategoria("Hamburguesas", List.of()));
-        Categoria categoriaPatatas = categoriaRepository.save(crearCategoria("Patatas", List.of()));
+        Categoria categoriaHamburguesas = categoriaRepository.save(crearCategoria("Hamburguesas"));
+        Categoria categoriaPatatas = categoriaRepository.save(crearCategoria("Patatas"));
 
         /* El menos vendido se guarda primero y el más vendido después (id mayor):
         si el ORDER BY fallara, el orden natural por id no coincidiría con el esperado y el test lo detectaría */
@@ -103,10 +102,33 @@ class ProductoRepositoryTest {
 
         // Assert
         assertThat(resultado).hasSize(2);
+        assertThat(resultado.get(0).getProductoId()).isEqualTo(hamburguesaClasica.getId());
         assertThat(resultado.get(0).getNombreProducto()).isEqualTo(hamburguesaClasica.getNombre());
-        // El totalVendido es Long de verdad aquí (no mockeado), así que compara contra 5L, no 5
         assertThat(resultado.get(0).getTotalVendido()).isEqualTo(5L);
+        assertThat(resultado.get(1).getProductoId()).isEqualTo(patatasFritas.getId());
         assertThat(resultado.get(1).getNombreProducto()).isEqualTo(patatasFritas.getNombre());
+        assertThat(resultado.get(1).getTotalVendido()).isEqualTo(1L);
+    }
+
+    // El ranking agrupa por id, no por nombre: dos productos con el mismo nombre salen separados
+    @Test
+    void obtenerProductosMasVendidosDeberiaSepararProductosConElMismoNombre() {
+        Categoria categoria = categoriaRepository.save(crearCategoria("Hamburguesas"));
+        Producto menosVendido = productoRepository.save(crearProducto("Hamburguesa clásica", "9.00", true, categoria));
+        Producto masVendido = productoRepository.save(crearProducto("Hamburguesa clásica", "8.50", true, categoria));
+        Terminal terminal = terminalRepository.save(crearTerminal("Terminal 1"));
+
+        Pedido pedido = crearPedido("PED-0001", terminal);
+        agregarLineaPedido(pedido, menosVendido, 1);
+        agregarLineaPedido(pedido, masVendido, 3);
+        pedidoRepository.save(pedido);
+
+        List<ProductoMasVendidoDto> resultado = productoRepository.obtenerProductosMasVendidos();
+
+        assertThat(resultado).hasSize(2);
+        assertThat(resultado.get(0).getProductoId()).isEqualTo(masVendido.getId());
+        assertThat(resultado.get(0).getTotalVendido()).isEqualTo(3L);
+        assertThat(resultado.get(1).getProductoId()).isEqualTo(menosVendido.getId());
         assertThat(resultado.get(1).getTotalVendido()).isEqualTo(1L);
     }
 }

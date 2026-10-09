@@ -44,14 +44,34 @@ public class EstadisticasServiceTest {
 
     @Test
     void obtenerProductosMasVendidosDeberiaDevolverLoQueDaElRepositorio() {
-        ProductoMasVendidoDto dto = new ProductoMasVendidoDto("Hamburguesa clásica", 25L);
+        ProductoMasVendidoDto dto = new ProductoMasVendidoDto(1L, "Hamburguesa clásica", 25L);
 
         when(productoRepository.obtenerProductosMasVendidos()).thenReturn(List.of(dto));
 
         List<ProductoMasVendidoDto> resultado = estadisticasService.obtenerProductosMasVendidos();
 
-        // System.out.println(mockingDetails(productoRepository).printInvocations());
-
         assertThat(resultado).containsExactly(dto);
+    }
+
+    @Test
+    void obtenerProductosMasVendidosDeberiaConservarTodosLosProductosYSuOrden() {
+        ProductoMasVendidoDto dto1 = new ProductoMasVendidoDto(1L, "Hamburguesa clásica", 25L);
+        ProductoMasVendidoDto dto2 = new ProductoMasVendidoDto(2L, "Patatas fritas", 18L);
+        ProductoMasVendidoDto dto3 = new ProductoMasVendidoDto(3L, "Refresco", 10L);
+
+        when(productoRepository.obtenerProductosMasVendidos()).thenReturn(List.of(dto1, dto2, dto3));
+
+        List<ProductoMasVendidoDto> resultado = estadisticasService.obtenerProductosMasVendidos();
+
+        assertThat(resultado).containsExactly(dto1, dto2, dto3);
+    }
+
+    @Test
+    void obtenerProductosMasVendidosDeberiaDevolverListaVaciaCuandoNoHayVentas() {
+        when(productoRepository.obtenerProductosMasVendidos()).thenReturn(List.of());
+
+        List<ProductoMasVendidoDto> resultado = estadisticasService.obtenerProductosMasVendidos();
+
+        assertThat(resultado).isEmpty();
     }
 }

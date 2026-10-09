@@ -10,6 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProductoMasVendidoDto {
+    private Long productoId;
     private String nombreProducto;
     // en JPQL, SUM() sobre un entero da Long, entonces lo usamos para cualquier @Query de agregación
     private Long totalVendido;

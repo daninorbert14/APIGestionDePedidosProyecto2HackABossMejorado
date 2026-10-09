@@ -44,7 +44,7 @@ public class EstadisticasControllerTest {
 
     @Test
     void obtenerProductosMasVendidosDeberiaDevolverloConEstadoOk() throws Exception {
-        ProductoMasVendidoDto dto = new ProductoMasVendidoDto("Hamburguesa clásica", 25L);
+        ProductoMasVendidoDto dto = new ProductoMasVendidoDto(1L, "Hamburguesa clásica", 25L);
 
         when(estadisticasService.obtenerProductosMasVendidos()).thenReturn(List.of(dto));
 
@@ -52,8 +52,40 @@ public class EstadisticasControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].productoId").value(1))
                 .andExpect(jsonPath("$[0].nombreProducto").value("Hamburguesa clásica"))
                 .andExpect(jsonPath("$[0].totalVendido").value(25))
                 .andExpect(jsonPath("$", hasSize(1)));
+    }
+
+    @Test
+    void obtenerProductosMasVendidosDeberiaDevolverMultiplesProductos() throws Exception {
+        ProductoMasVendidoDto dto1 = new ProductoMasVendidoDto(1L, "Hamburguesa clásica", 25L);
+        ProductoMasVendidoDto dto2 = new ProductoMasVendidoDto(2L, "Patatas fritas", 18L);
+
+        when(estadisticasService.obtenerProductosMasVendidos()).thenReturn(List.of(dto1, dto2));
+
+        mvc.perform(get("/api/estadisticas/productos-mas-vendidos"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].productoId").value(1))
+                .andExpect(jsonPath("$[0].nombreProducto").value("Hamburguesa clásica"))
+                .andExpect(jsonPath("$[0].totalVendido").value(25))
+                .andExpect(jsonPath("$[1].productoId").value(2))
+                .andExpect(jsonPath("$[1].nombreProducto").value("Patatas fritas"))
+                .andExpect(jsonPath("$[1].totalVendido").value(18))
+                .andExpect(jsonPath("$", hasSize(2)));
+    }
+
+    @Test
+    void obtenerProductosMasVendidosDeberiaDevolverListaVaciaCuandoNoHayVentas() throws Exception {
+        when(estadisticasService.obtenerProductosMasVendidos()).thenReturn(List.of());
+
+        mvc.perform(get("/api/estadisticas/productos-mas-vendidos"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$", hasSize(0)));
     }
 }
