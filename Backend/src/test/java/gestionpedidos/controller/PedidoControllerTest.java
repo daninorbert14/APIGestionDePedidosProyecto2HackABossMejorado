@@ -71,14 +71,6 @@ public class PedidoControllerTest {
         return pedidoDto;
     }
 
-    private PedidoProducto crearLineaPedido(Producto producto, int cantidad) {
-        PedidoProducto linea = new PedidoProducto();
-        linea.setProducto(producto);
-        linea.setCantidad(cantidad);
-        linea.setPrecioUnitario(producto.getPrecio());
-        return linea;
-    }
-
     private CrearPedidoDto crearPedidoDtoConUnProducto(Long terminalId, Long productoId, int cantidad) {
         Map<Long, Integer> productosComprados = new HashMap<>();
         productosComprados.put(productoId, cantidad);
