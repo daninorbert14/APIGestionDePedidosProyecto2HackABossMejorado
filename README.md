@@ -41,11 +41,6 @@ npm --prefix Frontend run dev
 - **Colección Postman**: `Backend/postman/` — `API de gestión de pedidos - Hamburguesería.postman_collection.json`
 - **Código fuente**: `Backend/` (Java 17, Spring Boot) y `Frontend/` (React 19, Vite)
 
-## Autores
-
-Laura Arias, Daniel Norbert, Rafael Porcel  
-Proyecto desarrollado como parte de un bootcamp de programación full stack.
-
 ## Mejoras futuras (consolidado)
 
 - Filtros en base de datos (push filtering en lugar de Java streams)
@@ -59,3 +54,8 @@ Proyecto desarrollado como parte de un bootcamp de programación full stack.
 - Migración del polling de 15 s a WebSockets para actualización en tiempo real
 - Mejoras de manejo de errores HTTP diferenciados
 - Persistencia de terminal seleccionada mediante localStorage
+
+## Autores
+
+Laura Arias, Daniel Norbert, Rafael Porcel  
+Proyecto desarrollado como parte de un bootcamp de programación full stack.
