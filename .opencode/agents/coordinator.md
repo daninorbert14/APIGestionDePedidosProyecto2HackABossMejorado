@@ -70,6 +70,7 @@ AGENTS.md y docs/constitution.md).
 - El resultado de la fase anterior.
 
 ## Reglas
+- Usa siempre rutas relativas a la raíz del repositorio; nunca rutas absolutas.
 - Nunca te saltes una aprobación del usuario (spec, y plan con tareas).
 - No resuelvas tú las dudas: pregunta al usuario.
 - Los subagentes no hablan con el usuario: traslada tú sus peticiones y bloqueos.

@@ -1,1 +1,11 @@
 **/.DS_Store
+.aider-desk/
+.agents/skills/chrome-devtools/
+.agents/skills/design-taste-frontend/
+.agents/skills/find-skills/
+.agents/skills/frontend-design/
+.agents/skills/grill-me/
+.agents/skills/impeccable/
+.agents/skills/vercel-react-best-practices/
+skills-lock.json
+.env

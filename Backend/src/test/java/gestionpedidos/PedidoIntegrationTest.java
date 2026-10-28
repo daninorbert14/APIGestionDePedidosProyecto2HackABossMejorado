@@ -1,15 +1,16 @@
 package gestionpedidos;
 
+import gestionpedidos.config.PostgresTestcontainersConfig;
 import gestionpedidos.dto.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -22,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 que sabe en qué puerto arrancó el servidor embebido y antepone esa base a cualquier ruta relativa que le pases */
 @AutoConfigureTestRestTemplate
 @ActiveProfiles("test")
-@Testcontainers
+@Import(PostgresTestcontainersConfig.class)
 class PedidoIntegrationTest {
 
     @Autowired

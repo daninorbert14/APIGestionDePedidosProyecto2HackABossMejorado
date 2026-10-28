@@ -1,10 +1,12 @@
 package gestionpedidos.repository;
 
-import gestionpedidos.dto.TerminalMasUtilizadaDto;
-import gestionpedidos.model.Pedido;
-import gestionpedidos.model.Terminal;
+import gestionpedidos.config.PostgresTestcontainersConfig;
 import org.junit.jupiter.api.Test;
+
+import gestionpedidos.dto.TerminalMasUtilizadaDto;
+import gestionpedidos.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 
@@ -14,6 +16,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ActiveProfiles("test")
+@Import(PostgresTestcontainersConfig.class)
 @DataJpaTest
 public class PedidoRepositoryTest {
 
