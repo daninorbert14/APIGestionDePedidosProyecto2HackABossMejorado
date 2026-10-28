@@ -343,7 +343,7 @@ mvn spring-boot:run
 
 ## Tests
 
-El proyecto incluye una suite de tests en varias capas, escritos con **JUnit 5**, **Mockito** y **Spring Test**, que cubre desde la lógica de negocio aislada hasta el flujo completo de una petición HTTP real contra una base de datos. La suite completa son **122 tests** (54 de controller, 55 de service, 6 de repositorio, 2 de integración, 1 de contexto de aplicación y 4 del validador de configuración).
+El proyecto incluye una suite de tests en varias capas, escritos con **JUnit 5**, **Mockito** y **Spring Test**, que cubre desde la lógica de negocio aislada hasta el flujo completo de una petición HTTP real contra una base de datos. La suite completa son **124 tests** (54 de controller, 55 de service, 6 de repositorio, 2 de integración, 1 de contexto de aplicación, 4 del validador de configuración y 2 de migraciones).
 
 ### Tests unitarios de `Service` (Mockito)
 
@@ -379,6 +379,8 @@ Las dos consultas de agregación (`@Query` con `SUM`/`COUNT` y `GROUP BY`) se pr
 ### Perfil de test aislado
 
 Cuatro clases usan el perfil `test` (`@ActiveProfiles("test")`): `GestionDePedidosApiApplicationTests`, `PedidoIntegrationTest`, `PedidoRepositoryTest` y `ProductoRepositoryTest`. Todas comparten `src/test/resources/application-test.properties` (`spring.jpa.hibernate.ddl-auto=create`), y la base de datos PostgreSQL la levanta Testcontainers (`postgres:17-alpine`, versiones gestionadas por el BOM de Spring Boot) mediante una configuración `@TestConfiguration` con `@ServiceConnection`. La suite completa no depende de una base de datos local ni de variables de entorno: solo necesita el demonio de Docker en marcha, y es reproducible en cualquier máquina.
+
+La excepción es `MigracionFlywayTest`: reactiva `spring.flyway.enabled=true` y `ddl-auto=validate` con `@SpringBootTest(properties=...)` para comprobar que V1+V2 migran y validan contra un contenedor vacío. No puede hacerlo en el perfil compartido porque la V2 siembra el catálogo y chocaría con los datos de los tests.
 
 ### Cómo ejecutarlos
 

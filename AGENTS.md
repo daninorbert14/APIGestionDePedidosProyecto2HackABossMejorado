@@ -48,6 +48,7 @@ Variables del `.env` (raíz):
 
 ## Comandos y tests
 - Backend: `mvn -f Backend/pom.xml test` (usa Testcontainers con PostgreSQL). Arrancar: `mvn spring-boot:run` desde `Backend/` — ver Límites.
+- El perfil `test` tiene `spring.flyway.enabled=false` y `ddl-auto=create` (los tests crean su esquema); no habilitar Flyway ahí (la V2 siembra el catálogo y chocaría con los datos de tests). `MigracionFlywayTest` es la única clase que migra (V1+V2) y valida contra un contenedor vacío.
 - Frontend: `npm --prefix Frontend run dev`; verificar con `npm --prefix Frontend run build` y `npm --prefix Frontend run lint`.
 - Spring Boot 4.1 reubicó las anotaciones de test (los imports de Spring Boot 3 no existen aquí): `@WebMvcTest` → `org.springframework.boot.webmvc.test.autoconfigure`; `@DataJpaTest` → `org.springframework.boot.data.jpa.test.autoconfigure`; `TestRestTemplate` → `org.springframework.boot.resttestclient` (+ `@AutoConfigureTestRestTemplate`).
 - Compara `BigDecimal` con `isEqualByComparingTo(...)`, nunca `isEqualTo(...)`.
