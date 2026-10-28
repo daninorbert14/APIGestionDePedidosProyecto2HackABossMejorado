@@ -1,16 +1,23 @@
 package gestionpedidos.config;
 
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.env.EnvironmentPostProcessor;
+import org.springframework.boot.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
 
 public class MotorPostgresqlValidator implements EnvironmentPostProcessor {
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
-        String url = environment.getProperty("spring.datasource.url");
-        // Si la URL no está configurada (nula o vacía), no hay nada que validar;
-        // fallará más tarde al conectar, pero nuestra comprobación no es responsable.
+        String url;
+        try {
+
+            url = environment.getProperty("spring.datasource.url");
+            // Si la URL no está configurada (nula o vacía), no hay nada que validar;
+            // fallará más tarde al conectar, pero nuestra comprobación no es responsable.
+        } catch (IllegalArgumentException e) {
+            // Variable sin definir (p. ej. DB_URL): no hay URL que validar; fallará después con su propio error
+            return;
+        }
         if (url == null || url.trim().isEmpty()) {
             return;
         }

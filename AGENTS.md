@@ -21,6 +21,26 @@ Sistema de gestión de pedidos para terminales de autoservicio (Terminal → Coc
 - Backend: variables de entorno reales (`DB_URL`, `DB_USERNAME`, `DB_PASSWORD` y `FRONTEND_URL`, opcional: por defecto `http://localhost:5173`) en la Run Config del IDE. **No crear `Backend/.env`**: Spring no lo lee y su `.gitignore` no lo excluye.
 - Frontend: `Frontend/.env` con `VITE_API_URL` (no hardcodeado).
 
+## Docker (desde la raíz)
+
+Comandos principales (con el `.env` creado a partir de `.env.example`):
+
+- **Todo en Docker**: `docker compose up --build` — levanta la base de datos, el backend y el frontend.
+- **Solo base de datos**: `docker compose up --wait db` — levanta solo la base de datos y espera a que esté sana antes de devolver el control.
+
+Variables del `.env` (raíz):
+- `DB_PASSWORD` — obligatoria; sin ella el comando falla antes de crear contenedores (`RF-7`).
+- `DB_USERNAME` — por defecto `postgres`.
+- `DB_NAME` — por defecto `gestion_pedidos`.
+- `DB_PORT` — por defecto `5432`, publicado solo en `127.0.0.1`.
+- `BACKEND_PORT` — por defecto `8080`.
+- `FRONTEND_PORT` — por defecto `8081`.
+- `VITE_API_URL` — se incrusta al construir el frontend; termina en `/api` (RF-15).
+
+**ADVERTENCIA**: El backend del IDE y el de Docker no pueden estar activos a la vez (comparten el puerto 8080). Si el IDE usa el 8080, `docker compose up` fallará por conflicto de puerto.
+
+**.env vs Backend/.env**: El archivo `.env` de la raíz se usa con `docker compose`; `Backend/.env` no es leído por Spring y no debe crearse.
+
 ## Lógica de negocio — fácil equivocarse
 - Estados: `CREADO → PREPARACION → LISTO → PAGADO → ENTREGADO`. Sin saltos; desde `ENTREGADO` no hay transición válida.
 - Solo se pueden añadir o quitar productos de un pedido en `CREADO`. Si se quita la última línea, el backend borra el pedido (`204`).
@@ -48,6 +68,6 @@ No hay tests automáticos de UI. Tras cada cambio de frontend, verifica con el M
 - Máximo ~50 líneas: resume o elimina lo que ya no aporte. Si algo pasa a ser regla permanente, propón moverlo a `AGENTS.md`. Nunca guardes datos sensibles.
 
 ## Límites
-- ✅ Siempre: leer `docs/constitution.md` y la spec activa (`specs/NNN-*/`) antes de tocar código; seguir las convenciones de nombres y de forma de respuesta; hacer solo lo que se pide, con cambios pequeños y enfocados.
+- ✅ Siempre: usar rutas relativas a la raíz del repositorio (Backend/..., Frontend/..., specs/...); nunca rutas absolutas; leer `docs/constitution.md` y la spec activa (`specs/NNN-*/`) antes de tocar código; seguir las convenciones de nombres y de forma de respuesta; hacer solo lo que se pide, con cambios pequeños y enfocados.
 - ⚠️ Pregunta antes: arrancar el backend; cambiar un DTO que ya consume el frontend; añadir una dependencia; consultar el esquema de la entidad.
 - 🚫 Nunca: crear o commitear `Backend/.env`; implementar gestión de catálogo (CRUD producto/categoría/terminal, va por backend/Swagger a propósito) en el frontend sin que se pida.

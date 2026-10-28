@@ -272,17 +272,20 @@ GET /api/estadisticas/ranking-terminales
 En `application.properties`:
 
 ```properties
+spring.application.name=Gestion_de_pedidos_API
+
 spring.datasource.url=${DB_URL}
+spring.datasource.driver-class-name=org.postgresql.Driver
 spring.datasource.username=${DB_USERNAME}
 spring.datasource.password=${DB_PASSWORD}
 
 spring.jpa.hibernate.ddl-auto=validate
 spring.jpa.show-sql=true
 
-# "always" si no tenemos la BBDD ya cargada y "never" si ya estaba creada
-spring.sql.init.mode=never
-
-# Flyway V1/V2 migrations managed separately
+# Habilitar api-docs y swagger-ui
+springdoc.api-docs.enable=true
+springdoc.swagger-ui.enable=true
+springdoc.swagger-ui.path=/doc/swagger-ui.html
 
 # Origen permitido para CORS (el frontend en desarrollo)
 app.cors.allowed-origin=${FRONTEND_URL:http://localhost:5173}
@@ -290,9 +293,9 @@ app.cors.allowed-origin=${FRONTEND_URL:http://localhost:5173}
 
 Configura las variables de entorno antes de ejecutar (Spring Boot no lee archivos `.env`; definelas en la configuración de tu IDE o en la terminal):
 
-DB_URL=jdbc:postgresql://localhost:5432/gestion_pedidos_bd
+DB_URL=jdbc:postgresql://localhost:5432/gestion_pedidos
 
-DB_USERNAME=root
+DB_USERNAME=postgres
 
 DB_PASSWORD=
 
@@ -334,11 +337,13 @@ mvn spring-boot:run
 # 4. Probar endpoints con Postman o Swagger
 ```
 
+> **Alternativa con Docker**: desde la raíz del repositorio puedes levantar todo el sistema (base de datos + backend + frontend) con `docker compose up --build`, o solo la base de datos con `docker compose up --wait db` y arrancar el backend desde el IDE. Ver el README de la raíz. Recuerda que el backend del IDE y el de Docker no pueden compartir el puerto 8080 a la vez.
+
 ---
 
 ## Tests
 
-El proyecto incluye una suite de tests en varias capas, escritos con **JUnit 5**, **Mockito** y **Spring Test**, que cubre desde la lógica de negocio aislada hasta el flujo completo de una petición HTTP real contra una base de datos. La suite completa son **111 tests** (54 de controller, 52 de service, 3 de repositorio, 1 de integración y 1 de contexto de aplicación).
+El proyecto incluye una suite de tests en varias capas, escritos con **JUnit 5**, **Mockito** y **Spring Test**, que cubre desde la lógica de negocio aislada hasta el flujo completo de una petición HTTP real contra una base de datos. La suite completa son **122 tests** (54 de controller, 55 de service, 6 de repositorio, 2 de integración, 1 de contexto de aplicación y 4 del validador de configuración).
 
 ### Tests unitarios de `Service` (Mockito)
 
@@ -373,14 +378,15 @@ Las dos consultas de agregación (`@Query` con `SUM`/`COUNT` y `GROUP BY`) se pr
 
 ### Perfil de test aislado
 
-Los tests de `@DataJpaTest` y el de integración usan `src/test/resources/application-test.properties`, con PostgreSQL mediante Testcontainers (`spring.jpa.hibernate.ddl-auto=validate`) — la suite completa no depende de tener MySQL arrancado ni de variables de entorno locales, y es reproducible en cualquier máquina con Docker.
+Cuatro clases usan el perfil `test` (`@ActiveProfiles("test")`): `GestionDePedidosApiApplicationTests`, `PedidoIntegrationTest`, `PedidoRepositoryTest` y `ProductoRepositoryTest`. Todas comparten `src/test/resources/application-test.properties` (`spring.jpa.hibernate.ddl-auto=create`), y la base de datos PostgreSQL la levanta Testcontainers (`postgres:17-alpine`, versiones gestionadas por el BOM de Spring Boot) mediante una configuración `@TestConfiguration` con `@ServiceConnection`. La suite completa no depende de una base de datos local ni de variables de entorno: solo necesita el demonio de Docker en marcha, y es reproducible en cualquier máquina.
 
 ### Cómo ejecutarlos
 
-Desde IntelliJ, botón derecho sobre `src/test/java` → `Run 'All Tests'`, o desde terminal:
+Desde IntelliJ, botón derecho sobre `src/test/java` → `Run 'All Tests'`, o desde terminal (con el demonio de Docker en marcha):
 
 ```bash
-mvn test
+mvn test                      # desde Backend/
+mvn -f Backend/pom.xml test   # desde la raíz del repositorio
 ```
 
 ---

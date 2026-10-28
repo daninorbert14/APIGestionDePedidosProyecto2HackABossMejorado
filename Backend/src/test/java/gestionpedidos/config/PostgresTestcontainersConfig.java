@@ -1,28 +1,17 @@
 package gestionpedidos.config;
 
-import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Bean;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
-/**
- * Configuración de Testcontainers para los tests de base de datos.
- * Provee un contenedor PostgreSQL compartido entre todos los tests del perfil "test".
- * El contenedor es estático (campo público estático) para que todos los tests
- * compartan la misma instancia y no se arranque uno por test.
- * Spring Boot 4.1.0 detecta el campo @Container y configura el DataSource automáticamente.
- */
-@Testcontainers
+@TestConfiguration(proxyBeanMethods = false) 
 public class PostgresTestcontainersConfig {
 
-    // Contenedor PostgreSQL compartido estáticamente.
-    // El campo estático y @Container hacen que comparta instancia entre tests.
-    // Spring Boot detecta este container y configura el DataSource para @DataJpaTest, etc.
-    @Container
-    static PostgreSQLContainer postgres = new PostgreSQLContainer<>("postgres:17-alpine");
-
-    static {
-        // Iniciar el contenedor cuando se carga la clase (una sola vez para todo el ciclo de tests)
-        postgres.start();
+    // @ServiceConnection hace que Spring Boot configure solo la URL, el usuario y la contraseña
+    @Bean
+    @ServiceConnection
+    PostgreSQLContainer postgresContainer() {
+        return new PostgreSQLContainer("postgres:17-alpine");   // misma etiqueta que docker-compose.yml
     }
 }

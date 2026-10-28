@@ -85,7 +85,7 @@ GET /api/terminales
 
 ### Productos
 
-GET /api/productos
+GET /api/productos?activo=true
 
 ### Pedidos
 
@@ -160,7 +160,7 @@ Ejemplo de mensaje mostrado:
 
 ## Configuración del proyecto
 
-La aplicación consume la API REST desarrollada en el Proyecto I.
+La aplicación consume la API REST desarrollada en `Backend/` de este repositorio.
 
 La URL base se lee de la variable de entorno `VITE_API_URL` (Vite). Crea un archivo `Frontend/.env` en la raíz del proyecto con:
 
@@ -169,6 +169,8 @@ VITE_API_URL=http://localhost:8080/api
 ```
 
 Sin ese archivo, la aplicación no sabrá a qué backend llamar y mostrará "Servidor no disponible".
+
+Esto aplica al desarrollo local (`npm run dev`). En el modo "todo en Docker" (`docker compose up --build`, ver el README de la raíz) no hace falta `Frontend/.env`: `VITE_API_URL` se inyecta como argumento de construcción de la imagen del frontend.
 
 Es necesario que el backend esté en ejecución antes de iniciar el frontend.
 

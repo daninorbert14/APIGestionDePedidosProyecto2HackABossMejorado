@@ -5,8 +5,8 @@ Memoria del proyecto entre sesiones (máximo ~50 líneas): resume o elimina lo q
 ## Estado actual
 
 - Backend completo: CRUD Categoría/Producto/Terminal, ciclo de vida de Pedido, Estadísticas (productos más vendidos, ranking terminales).
-- Tests completos: Service (Mockito), Controller (`@WebMvcTest`), Repository (`@DataJpaTest` sobre las `@Query` de agregación), integración (`TestRestTemplate`). Tests nuevos contra PostgreSQL con Testcontainers verifican búsqueda por código en minúsculas, duplicados rechazados en categoría/terminal/producto, suite en verde con BD real y altas nuevas sin colisión de IDs tras catálogo sembrado. Total: 121 tests (54 controller + 55 service + 6 repository + 3 integración + 3 capa superior).
-- Frontend: flujo Terminal/Cocina/Recogida funcionando. `buscarPedidoPorCodigo` implementado en RecogidaPage. Modificación de pedidos en Cocina implementada: `PedidoLineaInput` permite +/− unidades en pedidos CREADO. "Los más vendidos" en la carta de Terminal implementado (top 5, oculto si no hay ventas). Tests: 108 en total (54 controller + 50 service + 3 repository + 1 integración).
+- Tests backend: **122 en verde** (`mvn -f Backend/pom.xml test -Dspring.profiles.active=test`), incluidos integración y repositorio contra PostgreSQL real con Testcontainers (arreglo de T9, spec 005). Frontend: flujo Terminal/Cocina/Recogida funcionando, "Los más vendidos" en carta de Terminal, sin tests automáticos de UI.
+- Spec 005 Docker: T1-T9 completadas (T5-T7 las ejecuta el usuario con Docker Desktop).
 
 ## Decisiones (y por qué)
 
@@ -15,24 +15,27 @@ Memoria del proyecto entre sesiones (máximo ~50 líneas): resume o elimina lo q
 - `listarProductos` sigue en memoria (streams), no `Specification` — rehacer tests ya verificados no compensaba; mejora opcional.
 - Paquete simplificado a `gestionpedidos` (sin `com.empresa`) — proyecto de portfolio, no librería a publicar.
 - Rediseño visual completado: tokens unificados (`tokens.css`), dark mode por SO, iconos Lucide, responsive en las 3 páginas.
-- Duplicados de catálogo insensibles a mayúsculas: los repositorios usan `existsByNombreIgnoreCase` para rechazar nombres que solo difieran en mayúsculas/minúsculas, mientras el texto se guarda y muestra tal como se escribió. Tests actualizados con casos "Bebidas"/"bebidas" y "Hamburguesa clásica"/"hamburguesa clásica".
+- Duplicados de catálogo insensibles a mayúsculas (`existsByNombreIgnoreCase`); el texto se guarda y muestra tal como se escribió.
 
 ## Aprendizajes y errores a evitar
 
 - Spring Boot 4.1 reubicó `@WebMvcTest`/`@DataJpaTest`/`TestRestTemplate` a paquetes nuevos.
-- `GROUP BY` debe incluir todas las columnas no agregadas del `SELECT` — PostgreSQL exige agrupación completa.
-- `BigDecimal` en tests: `isEqualByComparingTo`, nunca `isEqualTo`.
-- Mocks de `@RequestBody`: `any(Dto.class)`, nunca el objeto literal.
-- Pedido vacío se elimina automáticamente al remover la última línea (lógica en `PedidoService`).
-- No crear `Backend/.env` — Spring no lo lee.
-- La ruta del proyecto es `/Users/daninorbert/Desktop/Programación/Proyectos de portfolio/APIGestionDePedidosProyecto2HackABossMejorado`. Ninguna otra.
-- No sobreescribas archivos enteros cuando no sea necesario. Detecta las líneas que hay que cambiar, sustituir, añadir o suprimir y actúa.
+- `GROUP BY` incluye todas las columnas no agregadas del `SELECT`; `BigDecimal` → `isEqualByComparingTo`; mocks `any(Dto.class)`.
+- Pedido vacío se elimina al quitar la última línea; no crear `Backend/.env` (Spring no lo lee).
+- Ruta del proyecto: solo la de este repositorio. No sobreescribas archivos enteros sin necesidad.
+
+### Tests con Testcontainers (arreglo T9)
+
+- En clase de test funciona `@Import(PostgresTestcontainersConfig.class)` (lo procesa `ImportsContextCustomizer` de Spring Boot). `@ContextConfiguration(classes=...)` con una clase que NO es `@TestConfiguration` sustituye la config de la app → `contextLoads` pasa vacío (falso verde).
+- No hardcodear `spring.datasource.url/username/password` en `application-test.properties`: pisa a `@ServiceConnection` y el contenedor publica un puerto aleatorio → "Connection refused". Driver e dialect los infieren Boot/Hibernate; en tests `spring.flyway.enabled=false` con `ddl-auto=create`.
+- Testcontainers 2.x renombró artefactos (`postgresql` → `testcontainers-postgresql`); el BOM de Spring Boot solo gestiona los nuevos → nunca mezclar módulos 1.x con core 2.x.
+- `MotorPostgresqlValidator` captura `IllegalArgumentException` de `${DB_URL}` sin definir: no debe romper el arranque.
 
 ## Próximos pasos
 
-- Frontend: actualizar README (errores HTTP ya resueltos, accesibilidad, polling, catálogo como decisión de diseño).
 - Opcional: migrar `listarProductos` a `Specification`.
 
-## Decisiones tomadas en spec 004
+## Specs anteriores
 
-Motor único PostgreSQL, Versionado Flyway (V1/V2), Chequeo del motor al arranque, Insensibilidad a mayúsculas, Testcontainers para tests, Documentación actualizada
+- **004**: PostgreSQL + Flyway V1/V2, chequeo del motor al arranque, insensibilidad a mayúsculas, Testcontainers, documentación actualizada.
+- **005 Docker**: dos modos (`docker compose up --build` / `up --wait db`); compose sin clave `version`; `${DB_PASSWORD:?...}` obligatoria antes de crear contenedores; BD publicada solo en `127.0.0.1`; etiqueta `postgres:17-alpine` coherente con tests; `VITE_API_URL` se fija al construir; `.env` real en raíz ignorado y `.env.example` versionada. Las advertencias de casos límite (puerto 8080 con IDE, contraseña distinta de BD creada, cambio de versión mayor, caracteres especiales, primer arranque lento, modos comparten datos) están documentadas en README y AGENTS.md.

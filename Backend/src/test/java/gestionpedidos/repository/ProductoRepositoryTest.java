@@ -1,9 +1,11 @@
 package gestionpedidos.repository;
 
+import gestionpedidos.config.PostgresTestcontainersConfig;
 import gestionpedidos.dto.ProductoMasVendidoDto;
 import gestionpedidos.model.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -15,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @ActiveProfiles("test")
+@Import(PostgresTestcontainersConfig.class)
 class ProductoRepositoryTest {
 
     @Autowired

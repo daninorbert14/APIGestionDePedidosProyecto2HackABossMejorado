@@ -2,8 +2,6 @@ package gestionpedidos.config;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.env.EnvironmentPostProcessor;
-import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.env.StandardEnvironment;
@@ -31,19 +29,20 @@ class MotorPostgresqlValidatorTest {
         sources.addFirst(new MapPropertySource("test-mysql", props));
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            validator.postProcessEnvironment(env, new SpringApplication(gestionpedidos.GestionDePedidosApiApplication.class));
+            validator.postProcessEnvironment(env,
+                    new SpringApplication(gestionpedidos.GestionDePedidosApiApplication.class));
         });
 
         String message = exception.getMessage();
         assertTrue(message.contains("jdbc:mysql"),
-            "El mensaje debe contener 'jdbc:mysql', pero fue: " + message);
+                "El mensaje debe contener 'jdbc:mysql', pero fue: " + message);
         assertTrue(message.contains("Solo se admite PostgreSQL"),
-            "El mensaje debe indicar que solo se admite PostgreSQL");
+                "El mensaje debe indicar que solo se admite PostgreSQL");
         // Verificar que no se incluye la URL completa ni credenciales
         assertFalse(message.contains("localhost:3306"),
-            "El mensaje no debe contener la host:puerta completa");
+                "El mensaje no debe contener la host:puerta completa");
         assertFalse(message.contains("mydb"),
-            "El mensaje no debe contener el nombre de la base de datos");
+                "El mensaje no debe contener el nombre de la base de datos");
     }
 
     @Test
@@ -55,19 +54,20 @@ class MotorPostgresqlValidatorTest {
         sources.addFirst(new MapPropertySource("test-postgres", props));
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            validator.postProcessEnvironment(env, new SpringApplication(gestionpedidos.GestionDePedidosApiApplication.class));
+            validator.postProcessEnvironment(env,
+                    new SpringApplication(gestionpedidos.GestionDePedidosApiApplication.class));
         });
 
         String message = exception.getMessage();
         assertTrue(message.contains("postgres"),
-            "El mensaje debe contener 'postgres', pero fue: " + message);
+                "El mensaje debe contener 'postgres', pero fue: " + message);
         assertTrue(message.contains("Solo se admite PostgreSQL"),
-            "El mensaje debe indicar que solo se admite PostgreSQL");
+                "El mensaje debe indicar que solo se admite PostgreSQL");
         // Verificar que no se incluye la URL completa ni credenciales
         assertFalse(message.contains("localhost:5432"),
-            "El mensaje no debe contener la host:puerta completa");
+                "El mensaje no debe contener la host:puerta completa");
         assertFalse(message.contains("mydb"),
-            "El mensaje no debe contener el nombre de la base de datos");
+                "El mensaje no debe contener el nombre de la base de datos");
     }
 
     @Test
@@ -79,6 +79,17 @@ class MotorPostgresqlValidatorTest {
         sources.addFirst(new MapPropertySource("test-postgres", props));
 
         // Debe lanzar excepción lanzada (no debería lanzar nada)
-        validator.postProcessEnvironment(env, new SpringApplication(gestionpedidos.GestionDePedidosApiApplication.class)); // expected: no exception
+        validator.postProcessEnvironment(env,
+                new SpringApplication(gestionpedidos.GestionDePedidosApiApplication.class)); // expected: no exception
+    }
+
+    @Test
+    void noDebeFallarSiLaUrlTieneUnaVariableSinDefinir() {
+        StandardEnvironment env = new StandardEnvironment();
+        env.getPropertySources().addFirst(new MapPropertySource("sin-variable",
+                Map.of("spring.datasource.url", "${VARIABLE_QUE_NO_EXISTE_12345}")));
+
+        validator.postProcessEnvironment(env,
+                new SpringApplication(gestionpedidos.GestionDePedidosApiApplication.class));
     }
 }

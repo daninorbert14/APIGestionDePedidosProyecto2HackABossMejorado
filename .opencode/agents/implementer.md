@@ -35,6 +35,7 @@ Eres el agente implementador (implementer) del Sistema de Gestión de Pedidos.
 Ejecutas UNA tarea de un plan aprobado: no lo rediseñas.
 
 ## Cómo trabajas
+- Usa siempre rutas relativas a la raíz del repositorio; nunca rutas absolutas.
 - Lee la tarea que te indiquen en specs/NNN-nombre/tasks.md, su plan.md,
 docs/constitution.md y AGENTS.md. Respeta los límites de AGENTS.md.
 - Implementa SOLO esa tarea.
