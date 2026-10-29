@@ -7,13 +7,19 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USERNAME:-postgres}
+      # `:?` corta en seco si falta la contraseña: sin ella Postgres crearía
+      # el volumen con una BD a la que después no podrías conectarte.
       POSTGRES_PASSWORD: "${DB_PASSWORD:?Falta DB_PASSWORD. Copia .env.example a .env y define una contraseña}"
       POSTGRES_DB: ${DB_NAME:-gestion_pedidos}
     volumes:
+      # Los datos viven fuera del contenedor: `down` no los borra, solo `down -v`.
       - pg_data:/var/lib/postgresql/data
     ports:
+      # Solo loopback: la BD no se publica en la red local, ni siquiera en dev.
       - "127.0.0.1:${DB_PORT:-5432}:5432"
     healthcheck:
+      # `$$` escapada: con una sola, compose sustituiría la variable en el host
+      # y el test llegaría vacío al shell del contenedor.
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
@@ -24,11 +30,15 @@ services:
     restart: unless-stopped
     depends_on:
       db:
+        # El backend solo arranca cuando la BD responde: si no, pierde la
+        # carrera y muere con error de conexión en el primer arranque.
         condition: service_healthy
     environment:
+      # `db` es el nombre del servicio: dentro de la red de compose es el host.
       DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-gestion_pedidos}
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: "${DB_PASSWORD:?Falta DB_PASSWORD. Copia .env.example a .env y define una contraseña}"
+      # Origen permitido en CORS: debe coincidir con la URL del frontend.
       FRONTEND_URL: http://localhost:${FRONTEND_PORT:-8081}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
@@ -37,6 +47,8 @@ services:
     build:
       context: ./Frontend
       args:
+        # La URL se incrusta en los estáticos al construir: por eso apunta a
+        # localhost (válida solo con este compose; la demo se construye aparte).
         VITE_API_URL: http://localhost:${BACKEND_PORT:-8080}/api
     restart: unless-stopped
     ports:

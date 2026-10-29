@@ -29,6 +29,8 @@ const TerminalPage = () => {
     loading: loadingTerm,
     error: errorTerm,
   } = useTerminales();
+  // Los más vendidos cargan en paralelo y no bloquean la página (loading y
+  // error propios): mientras llegan, su sección simplemente no se pinta
   const {
     datos: masVendidos,
     loading: loadingMasVendidos,

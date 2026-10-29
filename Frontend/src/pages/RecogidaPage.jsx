@@ -18,6 +18,9 @@ const claseSegunEstado = (estado) => {
   return "pedido-listo-card--sin-accion"; // CREADO, PREPARACION o ENTREGADO
 };
 
+// Cobro y entrega son los dos únicos saltos que gestiona Recogida:
+// LISTO → PAGADO (cobrar) y PAGADO → ENTREGADO (entregar). Devuelve true si
+// la petición fue bien para que la vista oculte la tarjeta de búsqueda
 const handleAccion = async (id, estadoActual) => {
   try {
     const nuevoEstado = estadoActual === ESTADOS_PEDIDO.LISTO ? ESTADOS_PEDIDO.PAGADO : ESTADOS_PEDIDO.ENTREGADO;
@@ -35,17 +38,21 @@ const handleAccion = async (id, estadoActual) => {
 };
 
 const RecogidaPage = () => {
+  // Tras la acción no se llama a refetch: la lista se refresca sola con el
+  // polling de usePedidosPorEstados (cada 15 s), que sigue corriendo aquí
   const { pedidos, loading, error } = usePedidosPorEstados([ESTADOS_PEDIDO.LISTO, ESTADOS_PEDIDO.PAGADO]);
   const [codigoBusqueda, setCodigoBusqueda] = useState("");
   const [mostrarPedidoEncontrado, setMostrarPedidoEncontrado] = useState(false);
   const [pedidoEncontrado, setPedidoEncontrado] = useState(null);
+  // Solo LISTO y PAGADO se gestionan desde esta pantalla; un pedido encontrado
+  // por código en otro estado se muestra en solo lectura (sin botón de acción)
   const puedeGestionarse = [
     ESTADOS_PEDIDO.LISTO,
     ESTADOS_PEDIDO.PAGADO,
   ].includes(pedidoEncontrado?.estado);
 
   const handleBuscar = async () => {
-    // Se recorta una vez por su hubiese espacios en blanco por error y se usa en todo el método
+    // Se recorta una vez por si hubiese espacios en blanco por error y se usa en todo el método
     const codigo = codigoBusqueda.trim();
 
     if (!codigo) {

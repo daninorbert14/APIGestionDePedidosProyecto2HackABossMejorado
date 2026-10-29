@@ -1,7 +1,15 @@
+# El build ya está en target/: copiarlo solo ensucia el contexto y puede
+# pisar el jar que genera la imagen por su propia capa de Maven.
 target/
+# Nada de IDE, Postman ni documentación dentro de la imagen.
 .idea/
 .vscode/
 *.iml
 postman/
+# Secrets: el .env jamás debe terminar en una imagen.
 .env
+# Control de versiones: no aporta al build y encarece el contexto.
 .git
+.gitignore
+.gitattributes
+*.md

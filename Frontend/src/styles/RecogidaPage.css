@@ -123,6 +123,8 @@
   gap: var(--sp-4);
 }
 
+/* Ocupa todas las columnas: el grid es de ancho variable (auto-fill) y el
+   mensaje vacío debe centrarse en la fila entera, no en una sola celda */
 .pedidos-listos-grid__vacio {
   grid-column: 1 / -1;
   text-align: center;
@@ -141,6 +143,9 @@
   gap: var(--sp-3);
 }
 
+/* El código del pedido es el protagonista de la tarjeta: monospace para
+   distinguirlo de un texto normal y word-break porque en una tarjeta estrecha
+   PED-AB12CD34 debe poder partirse en vez de desbordar */
 .pedido-listo-card h1 {
   font-size: 1.5rem;
   font-weight: 700;
@@ -156,6 +161,8 @@
   color: var(--accent);
 }
 
+/* Verde --st-listo: LISTO es el único estado con acción pendiente aquí
+   (cobrar); el botón pasa a contorno para no competir con el fondo verde */
 .pedido-listo-card--listo {
   background: var(--st-listo-bg);
   border-left: 3px solid var(--st-listo);
@@ -176,6 +183,10 @@
   color: white;
 }
 
+/* Trampa de nombres: la clase dice "pagado" pero se pinta con los tokens
+   GRISES de --st-entregado (no existe un token propio para PAGADO). El gris
+   significa "la acción de cobro ya está hecha, solo queda entregar" y deja el
+   verde reservado a LISTO, que es el que pide cobro */
 .pedido-listo-card--pagado {
   background: var(--st-entregado-bg);
   border-left: 3px solid var(--st-entregado);
@@ -196,12 +207,15 @@
   color: white;
 }
 
+/* Tarjeta de búsqueda: más estrecha y centrada para que se lea como un
+   resultado único y enfocado, distinta de la rejilla de pedidos */
 .pedido-listo-card--busqueda {
   max-width: 400px;
   margin: 0 auto;
 }
 
-/* Responsive */
+/* Responsive: en móvil todo pasa a una columna (las tarjetas de 280px no
+   caben de dos en dos) y la barra se apila para aprovechar el ancho completo */
 @media (max-width: 768px) {
   .pedidos-listos-grid {
     grid-template-columns: 1fr;

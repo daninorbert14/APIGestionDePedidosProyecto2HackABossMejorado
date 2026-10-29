@@ -18,11 +18,23 @@ public class EstadisticasController {
 
     private final EstadisticasService estadisticasService;
 
+    // GET de listado → array directo, sin sobre: misma forma que el resto de
+    // listados de la API (regla fijada en AGENTS.md)
+
+    /**
+     * Ranking completo de terminales por uso, de más a menos. Sin parámetros
+     * ni paginación: es un listado pequeño. Hoy no lo consume ninguna
+     * pantalla del frontend; queda expuesto para Swagger.
+     */
     @GetMapping("/ranking-terminales")
     public ResponseEntity<List<TerminalMasUtilizadaDto>> obtenerRankingDeTerminales() {
         return ResponseEntity.ok(estadisticasService.obtenerRankingDeTerminales());
     }
 
+    /**
+     * Productos vendidos, de más a menos. Devuelve la lista completa ordenada;
+     * el corte a los 5 primeros (lo que muestra la carta) lo hace el frontend.
+     */
     @GetMapping("/productos-mas-vendidos")
     public ResponseEntity<List<ProductoMasVendidoDto>> obtenerProductosMasVendidos() {
         return ResponseEntity.ok(estadisticasService.obtenerProductosMasVendidos());

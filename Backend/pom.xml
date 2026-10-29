@@ -44,7 +44,10 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <!-- Flyway: en Spring Boot 4 la autoconfiguración vive en este starter -->
+        <!-- Flyway: en Spring Boot 4 la autoconfiguración vive en este starter.
+             Existe aquí, pero el perfil test lo tiene desactivado (spring.flyway.enabled=false):
+             la V2 siembra el catálogo y chocaría con los datos de los tests.
+             Solo MigracionFlywayTest lo reactiva, contra un contenedor vacío. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-flyway</artifactId>
@@ -89,6 +92,9 @@
             <artifactId>testcontainers</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Trampa Testcontainers 2.x: el artefacto se renombró (antes `postgresql`);
+             el BOM de Spring Boot solo gestiona los nuevos, así que hay que usar
+             este nombre exacto y nunca mezclar módulos 1.x con el core 2.x. -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-postgresql</artifactId>

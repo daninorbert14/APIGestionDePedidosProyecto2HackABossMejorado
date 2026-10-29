@@ -16,7 +16,9 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     Optional<Pedido> findByCodigoIgnoreCase(String codigo);
 
-    // El """ se usa para escribir texto multilínea sin concatenar ni escapar comillas
+    // El """ se usa para escribir texto multilínea sin concatenar ni escapar comillas.
+    // Trampa PostgreSQL (misma que en ProductoRepository): el GROUP BY debe incluir
+    // todas las columnas no agregadas del SELECT (id y nombre de la terminal)
     @Query("""
             SELECT new gestionpedidos.dto.TerminalMasUtilizadaDto(p.terminal.nombre, COUNT(p))
             FROM Pedido p

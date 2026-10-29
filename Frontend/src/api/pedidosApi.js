@@ -19,6 +19,12 @@ export async function agregarProductoAPedido(pedidoId, dto) {
     });
 }
 
+// Cada endpoint es una función: la URL y el método quedan centralizados y
+// cualquier cambio de ruta se hace en un solo sitio. fetchJSON unifica el
+// parseo del cuerpo y la conversión de errores (una sola forma de fallar).
+
+// La cantidad va en la query, no en el body: el DELETE solo acepta el
+// parámetro `cantidad` (así lo define el contrato del backend, RF-15)
 export async function eliminarProductoDePedido(pedidoId, productoId, cantidad) {
     return fetchJSON(
         `${PEDIDOS_URL}/${pedidoId}/eliminar-producto/${productoId}?cantidad=${cantidad}`,
@@ -26,6 +32,8 @@ export async function eliminarProductoDePedido(pedidoId, productoId, cantidad) {
     );
 }
 
+// PATCH y no PUT: solo se envía el campo estado (actualización parcial);
+// el backend rechaza con 400 las transiciones fuera del orden permitido
 export async function cambiarEstadoDelPedido(pedidoId, dto) {
     return fetchJSON(`${PEDIDOS_URL}/${pedidoId}/estado`, {
         method: "PATCH",

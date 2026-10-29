@@ -53,7 +53,8 @@
   background: transparent;
 }
 
-/* Layout principal: 2 columnas */
+/* Layout principal: 2 columnas. La carta se lleva dos tercios (es lo que el
+   cliente lee y recorre entero) y el ticket uno, como resumen lateral */
 .terminal-layout {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -67,6 +68,9 @@
   gap: var(--sp-6);
 }
 
+/* sticky con top: 72px: la carta es larga y el ticket acompaña el scroll,
+   quedando por debajo de la navbar (que también es sticky) para no taparle
+   el título */
 .terminal-layout__ticket {
   position: sticky;
   top: 72px;
@@ -149,6 +153,9 @@
   gap: 0.25rem;
 }
 
+/* min-height en el nombre: los productos con nombre largo ocupan dos líneas
+   y, sin esta reserva, desplazarían el precio y el botón de las tarjetas
+   vecinas de la misma fila */
 .producto-card p:first-child {
   font-weight: 500;
   font-size: var(--text-caption);
@@ -156,6 +163,9 @@
   min-height: 1.8em;
 }
 
+/* margin-top: auto empuja precio y botón al fondo de la tarjeta: todas las
+   tarjetas de una fila terminan con los elementos alineados aunque los
+   nombres ocupen distinto */
 .producto-card__footer {
   margin-top: auto;
   display: flex;
@@ -268,7 +278,8 @@
   background: var(--accent-hover);
 }
 
-/* Responsive */
+/* Responsive: en una sola columna el sticky del ticket no aporta (no hay
+   carta al lado que recorrer) y el layout pasa a 1fr */
 @media (max-width: 768px) {
   .terminal-layout {
     grid-template-columns: 1fr;

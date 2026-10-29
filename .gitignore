@@ -1,4 +1,6 @@
+# macOS
 **/.DS_Store
+# Herramientas locales de agentes/IA: no forman parte del proyecto.
 .aider-desk/
 .agents/skills/chrome-devtools/
 .agents/skills/design-taste-frontend/
@@ -8,4 +10,5 @@
 .agents/skills/impeccable/
 .agents/skills/vercel-react-best-practices/
 skills-lock.json
+# Contraseña real de Docker Compose: solo se versiona el .env.example.
 .env

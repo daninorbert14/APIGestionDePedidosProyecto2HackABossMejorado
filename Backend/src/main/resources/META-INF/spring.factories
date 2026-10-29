@@ -1,2 +1,5 @@
 # Spring Boot META-INF/spring.factories
+# Registro del validador: sin esta línea la clase existe pero nunca se ejecuta.
+# No es una autoconfiguración (esas se registran en otro fichero desde Boot 3);
+# los EnvironmentPostProcessor siguen descubriéndose por spring.factories
 org.springframework.boot.EnvironmentPostProcessor=gestionpedidos.config.MotorPostgresqlValidator

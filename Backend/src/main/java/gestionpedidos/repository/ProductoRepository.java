@@ -21,14 +21,17 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     List<ProductoMasVendidoDto> obtenerProductosMasVendidos();
     /*
     Query explicada:
-    - SELECT new gestionpedidos.dto.ProductoMasVendidoDto(pp.producto.nombre, SUM(pp.cantidad)) -> Por cada fila de resultado,
+    - SELECT new gestionpedidos.dto.ProductoMasVendidoDto(pp.producto.id, pp.producto.nombre, SUM(pp.cantidad)) -> Por cada fila de resultado,
     construye directamente un objeto ProductoMasVendidoDto llamando a su constructor con los valores
-    "pp.producto.nombre"(desde esta línea de pedido, ve al producto asociado, y coge su nombre) y
+    "pp.producto.id" y "pp.producto.nombre"(desde esta línea de pedido, ve al producto asociado, y coge su id y su nombre) y
     "SUM(pp.cantidad)"(suma el campo cantidad de todas las filas que caigan en el mismo grupo), en este orden.
     - FROM PedidoProducto pp —> Voy a recorrer todas las filas de la tabla que corresponde a PedidoProducto
      y las voy a nombrar pp para referirme a ellas en el resto de la query.
     - GROUP BY pp.producto -> En vez de darme 50 filas sueltas, júntalas todas en un solo grupo por cada producto distinto
      y déjame aplicar SUM() dentro de cada grupo.
+     Trampa PostgreSQL: el GROUP BY debe listar TODAS las columnas del SELECT que no
+     son agregados (id y nombre), aunque agrupar solo por id bastaría; si falta
+     alguna, la BD rechaza la consulta.
     - ORDER BY SUM(pp.cantidad) DESC -> Ordena el resultado de manera descendente.
     */
 }

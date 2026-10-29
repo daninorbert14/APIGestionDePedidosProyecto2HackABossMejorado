@@ -1,4 +1,11 @@
+# node_modules se recrea con npm ci: copiarlo del host (otra arquitectura u
+# otra versión de Node) rompería la instalación reproducible.
 node_modules/
+# dist lo genera el propio build dentro de la imagen.
 dist/
+# Secrets: el .env jamás debe terminar en una imagen.
 .env
+# Control de versiones y docs: no aportan al build.
 .git
+.gitignore
+*.md

@@ -4,7 +4,8 @@ import PedidoLineaInput from "./PedidoLineaInput";
 import { Play, Check } from "lucide-react";
 
 export default function PedidoCard({ pedido, onAvanzar, onRefetch }) {
-  // El botón esta trabajando?
+  // Estado local de "petición en vuelo": mientras onAvanzar no resuelve, el
+  // botón queda deshabilitado (evita doble click y estados duplicados)
   const [advancing, setAdvancing] = useState(false);
 
   async function handleAvanzar() {
@@ -16,6 +17,8 @@ export default function PedidoCard({ pedido, onAvanzar, onRefetch }) {
     }
   }
 
+  // Mismo botón, dos acciones según el estado: cocina solo gestiona estos dos
+  // saltos (CREADO → PREPARACION → LISTO); el resto de transiciones no es suyo
   const labelBoton =
     pedido.estado === ESTADOS_PEDIDO.CREADO ? (
       <>
@@ -37,6 +40,8 @@ export default function PedidoCard({ pedido, onAvanzar, onRefetch }) {
       </header>
 
       <ul className="pedido-card__productos">
+        {/* ?. en productos: un pedido recién creado o uno cuya línea se acaba de
+            quitar puede llegar sin líneas; sin optional chaining el render revienta */}
         {pedido.productos?.map((p) => (
           <li key={p.productoId} className="pedido-card__producto">
             <PedidoLineaInput
