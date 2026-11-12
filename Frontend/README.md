@@ -219,3 +219,9 @@ npm run build
 * Condición de carrera posible entre el polling automático (15 s) y una acción manual del usuario (p. ej. cobrar un pedido justo cuando se dispara el refresco).
 * Un producto desactivado mientras está en el carrito no se detecta hasta que el backend lo rechaza al enviar el pedido.
 
+### Limitaciones conocidas
+- **Dependencias del frontend (`npm audit`, <fecha>)**: quedan 4 avisos moderados con un mismo origen, `minimatch` (GHSA-g3hv-75wg-m249 / CVE-2026-118764, versiones 7.0.0 a 11.0.0, corregido en 11.0.1), que llega a través de ESLint 10 (`eslint`, `@eslint/js`, `@eslint/config-array`).
+- **Por qué no afecta al proyecto**: ESLint es una herramienta de desarrollo y no entra en la imagen del frontend (`npm audit --omit=dev` sale limpio); además, el fallo requiere que un atacante controle los patrones de archivos, y los únicos que lee ESLint son los de su configuración.
+- **Por qué no se corrige ya**: `npm audit fix --force` bajaría ESLint de la serie 10 a la 9.39.5, y ninguna versión de ESLint 10 depende todavía de un `minimatch` corregido.
+- **Cuándo se revisa**: cuando ESLint publique una versión con la dependencia corregida (Dependabot la propondrá) y `npm audit` quede a 0.
+

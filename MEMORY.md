@@ -48,3 +48,4 @@ Memoria del proyecto entre sesiones (máximo ~50 líneas): resume o elimina lo q
 ## Próximos pasos
 
 - Opcionales: migrar `listarProductos` a `Specification`; jar en capas (`-Djarmode=tools`); verificación visual en navegador de la limpieza de Recogida (hook `usePedidoPorCodigo`, bloque CSS `.pedido-encontrado-card`, clase `pedido-listo-card--sin-accion`), sin cambios visuales por diseño pero no revisada con backend arrancado.
+- Revisar el aviso de `minimatch` (ESLint 10) cuando salga una versión de ESLint con la dependencia corregida; ver README, Limitaciones conocidas.
