@@ -60,10 +60,13 @@ updates:
       # FROM postgres (RF-6 menciona los Dockerfile). Retirar solo si las pruebas y el
       # archivo de imágenes se actualizan a la vez.
       - dependency-name: "postgres"
-      # Imagen de construcción fijada en el proyecto (Java 17): solo bloqueamos los
-      # mayores. Retirar si el proyecto sube de Java 17 (RF-7).
+      # Imagen de construcción fijada en el proyecto (Java 17): ignore TOTAL, no solo
+      # de mayores. El JDK va dentro de la etiqueta (p. ej. 3-eclipse-temurin-17) y
+      # Dependabot interpreta la versión como 3, de modo que el filtro de mayores no
+      # impedía proponer subir de Java 17 (comprobado en la verificación real: PR #20,
+      # 3-eclipse-temurin-17 → 3-eclipse-temurin-26). Retirar si el proyecto sube de
+      # Java 17 (RF-7).
       - dependency-name: "maven"
-        update-types: ["version-update:semver-major"]
       # eclipse-temurin es la imagen de JRE (Java 17): solo los mayores.
       # Retirar si el proyecto sube de Java 17 (RF-7).
       - dependency-name: "eclipse-temurin"

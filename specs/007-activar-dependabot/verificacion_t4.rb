@@ -79,9 +79,11 @@ ok_rf6 = tres.all? { |eco, dir|
 }
 guardar.call(7, "RF-6", ok_rf6, det_rf6.map { |a, b| "#{a}: #{b}" }.join(" | "))
 
-# --- 8. Solo mayores de node / eclipse-temurin / maven en su entrada (RF-7) -
+# --- 8. maven TOTAL; solo mayores de node / eclipse-temurin, cada uno en su
+#        entrada (RF-7 tras el cambio de requisitos: el ignore de maven es total
+#        porque el JDK va dentro de su etiqueta y Dependabot lee la versión como 3)
 esper_rf7 = {
-  ["docker", "/Backend"] => { "maven" => "version-update:semver-major", "eclipse-temurin" => "version-update:semver-major" },
+  ["docker", "/Backend"] => { "maven" => nil, "eclipse-temurin" => "version-update:semver-major" },
   ["docker", "/Frontend"] => { "node" => "version-update:semver-major" },
 }
 todos_ignores = []
@@ -94,9 +96,10 @@ faltantes = []
 esper_rf7.each do |(eco, dir), mapa|
   mapa.each do |nombre, tipo|
     en = todos_ignores.select { |x| x[:eco] == eco && x[:dir] == dir && x[:nombre] == nombre }
-    # cada ignore de estos nombres debe llevar exactamente ese update-type
+    esperado_t = tipo ? [tipo] : nil # nil => ignore total, sin update-types
+    # cada ignore de estos nombres debe cumplir exactamente su expectativa
     faltantes << "#{nombre} ausente en #{eco} #{dir}" if en.empty?
-    faltantes << "#{nombre} mal tipado en #{eco} #{dir}" unless en.all? { |x| x[:tipos] == [tipo] }
+    faltantes << "#{nombre} mal tipado en #{eco} #{dir}" unless en.all? { |x| x[:tipos] == esperado_t }
   end
 end
 # y solo donde su imagen aparece: ninguno de los tres nombres fuera de su entrada
