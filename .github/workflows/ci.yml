@@ -66,7 +66,7 @@ jobs:
       - name: Guardar imágenes (solo push a main)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: docker save img/backend:ci -o backend.tar && docker save img/frontend:ci -o frontend.tar
-      - uses: actions/upload-artifact@v4         # RF-19: no se sube en PRs (ahorra tiempo)
+      - uses: actions/upload-artifact@v7         # RF-19: no se sube en PRs (ahorra tiempo)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with: { name: "images-${{ github.sha }}", path: "*.tar", overwrite: true }
   publish:                  # RF-16 a RF-23
