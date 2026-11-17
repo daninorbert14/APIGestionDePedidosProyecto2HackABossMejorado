@@ -78,7 +78,7 @@ jobs:
       contents: read
       packages: write       # solo aquí (duda 2.5, RF-23)
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with: { name: "images-${{ github.sha }}" }
       - run: docker load -i backend.tar && docker load -i frontend.tar   # RF-19: mismas imágenes, sin reconstruir
       - name: Prefijo en minúsculas (duda 2.4)
