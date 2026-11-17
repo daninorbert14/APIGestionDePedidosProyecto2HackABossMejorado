@@ -44,7 +44,7 @@ jobs:
             echo "::error::docker compose config no falla con DB_PASSWORD vacía"; exit 1
           fi
       - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6        # push: false (en PRs no se publica nada)
+      - uses: docker/build-push-action@v7        # push: false (en PRs no se publica nada)
         with:
           context: ./Backend
           push: false
@@ -53,7 +53,7 @@ jobs:
           labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,ignore-error=true,scope=backend   # mode=max: necesario para que la capa de dependencias del backend (spec 005, go-offline) llegue a la caché
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: ./Frontend
           push: false
