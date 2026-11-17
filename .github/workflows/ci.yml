@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20     # tope por job para que nada se cuelgue
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: "17", cache: maven }
       - run: mvn -B -f Backend/pom.xml test      # sin variables DB_* (RF-6)
@@ -24,7 +24,7 @@ jobs:
     timeout-minutes: 20     # tope por job para que nada se cuelgue
     defaults: { run: { working-directory: Frontend } }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with: { node-version: "22", cache: npm, cache-dependency-path: Frontend/package-lock.json }
       - run: npm ci         # reproducible desde package-lock.json
@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20     # tope por job para que nada se cuelgue
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Validar Compose con valor ficticio
         run: DB_PASSWORD=ci-dummy docker compose config --quiet
       - name: El Compose debe fallar sin contraseña
