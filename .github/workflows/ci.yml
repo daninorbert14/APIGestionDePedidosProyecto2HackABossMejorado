@@ -83,7 +83,7 @@ jobs:
       - run: docker load -i backend.tar && docker load -i frontend.tar   # RF-19: mismas imágenes, sin reconstruir
       - name: Prefijo en minúsculas (duda 2.4)
         run: echo "IMAGE_PREFIX=ghcr.io/$(printf '%s' "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
       - name: Etiquetar y publicar (latest condicional, duda 2.1)
         env:
