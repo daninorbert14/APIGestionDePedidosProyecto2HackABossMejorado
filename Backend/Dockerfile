@@ -1,5 +1,5 @@
 # Etapa 1: compilar el jar con Maven. Esta imagen no llega a producción.
-FROM maven:3-eclipse-temurin-17 AS build
+FROM maven:3-eclipse-temurin-26 AS build
 WORKDIR /app
 # El pom primero y el código después: Docker reutiliza la caché de capas
 # y no vuelve a descargar dependencias si solo cambia el código.
