@@ -1,6 +1,6 @@
 # Spec 007 — Activar Dependabot
 
-Estado: aprobada
+Estado: implementada
 
 ## Contexto y objetivo
 
@@ -65,7 +65,11 @@ valida cada propuesta.
   Las actualizaciones de seguridad no se retrasan.
 - RF-5: EL SISTEMA mantendrá como máximo 3 propuestas de versión abiertas por cada entrada
   de la configuración; SI una entrada alcanza ese límite, ENTONCES no abrirá nuevas propuestas
-  en ella hasta que se cierre alguna.
+  en ella hasta que se cierre alguna. SI en la verificación real del repositorio una entrada
+  queda con más propuestas de versión abiertas que el límite declarado, ENTONCES, antes de
+  dar por cumplido este requisito, se comprobará que la configuración activa en GitHub es
+  la versionada en el repositorio y se observará que una ejecución posterior no abre nuevas
+  propuestas en esa entrada hasta que baje del límite.
 
 ### Excepciones (ignores) ya decididas
 
@@ -75,15 +79,21 @@ valida cada propuesta.
   Testcontainers (RF-19 de la spec 005), que Dependabot no ve. El ignore es deliberadamente
   más estricto que RF-19: como Dependabot no puede cambiar a la vez la etiqueta de las pruebas,
   cualquier cambio de versión en el compose las desincronizaría.
-- RF-7: EL SISTEMA no propondrá actualizaciones mayores de las imágenes de node,
-  eclipse-temurin ni maven (la de construcción del backend), porque el proyecto está fijado
-  en Node 22 y Java 17.
+- RF-7: EL SISTEMA no propondrá actualizaciones de la imagen maven (la de construcción
+  del backend), de cualquier nivel, y no propondrá actualizaciones mayores de las imágenes
+  de node y eclipse-temurin, porque el proyecto está fijado en Java 17 y en Node 22. El
+  ignore de maven es total y no solo de mayores porque en esa etiqueta el JDK va dentro del
+  sufijo (p. ej. 3-eclipse-temurin-17) y Dependabot interpreta la versión como 3, de modo
+  que el filtro de mayores no impide proponer subir de Java 17 (comprobado en la
+  verificación real: propuesta de 3-eclipse-temurin-17 a 3-eclipse-temurin-26); es la
+  excepción mínima que evita esa actualización.
 - RF-8: No existe ninguna excepción para ESLint ni para minimatch.
 - RF-9: Cada excepción de la configuración llevará un comentario, en el propio archivo,
   con su motivo y cuándo retirarla (por ejemplo, «retirar si el proyecto sube de Java 17»).
-  Motivos: PostgreSQL debe coincidir con Testcontainers (RF-19 de la spec 005); Node, eclipse-temurin
-  y maven (imagen de construcción) están fijados por el proyecto. La decisión quedará recogida
-  en la memoria del proyecto.
+  Motivos: PostgreSQL debe coincidir con Testcontainers (RF-19 de la spec 005); Node y
+  eclipse-temurin se ignoran solo en sus mayores y maven (imagen de construcción) se ignora
+  completa, por el formato de su etiqueta (RF-7); los tres están fijados por el proyecto.
+  La decisión quedará recogida en la memoria del proyecto.
 
 ### Revisiones y fallos
 
@@ -119,10 +129,16 @@ valida cada propuesta.
   con el comentario de ignorar (RF-10).
 - Un ecosistema llega a 3 PRs abiertos: no se emiten más hasta cerrar alguno (RF-5); el
   límite es por entrada de la configuración, de modo que una entrada saturada no bloquea a las demás.
+- En la verificación real una entrada queda con más propuestas de versión abiertas que el
+  límite declarado (p. ej. cuatro propuestas de github-actions en la primera ejecución):
+  no se da por cumplido RF-5 hasta comprobar que la configuración activa en GitHub es la
+  del repositorio y que una ejecución posterior no abre nuevas propuestas en esa entrada
+  hasta bajar del límite (RF-5).
 - Dependabot no propone nada en Docker/Compose por las etiquetas flotantes: es lo
   previsto, no un fallo (RF-2); la imagen se actualizará al reconstruir.
 - Propuesta de una nueva versión de PostgreSQL (de cualquier nivel): no se emite (RF-6).
-  Propuesta de una versión mayor de Node, eclipse-temurin o maven: no se emite (RF-7).
+  Propuesta de una versión mayor de Node o eclipse-temurin, o de cualquier versión de la
+  imagen maven (p. ej. cambiar el JDK de su etiqueta): no se emite (RF-7).
 - Fallo de minimatch/ESLint: ninguna excepción lo cubre; se espera a la versión corregida
   del fabricante (RF-8).
 - El usuario configura las alertas de seguridad del repositorio como un paso manual e
@@ -152,13 +168,18 @@ valida cada propuesta.
 
 - El archivo de configuración existe, está versionado y cubre los cinco ecosistemas
   (RF-1), con el límite de 3 PRs por entrada (RF-5), un PR por dependencia (RF-3) y
-  programación semanal los lunes (RF-4).
+  programación semanal los lunes (RF-4); en la verificación real del repositorio, si una
+  entrada queda con más propuestas de versión abiertas que el límite, se comprueba que la
+  configuración activa es la del repositorio y que la ejecución siguiente no abre nuevas
+  hasta bajar del límite (RF-5).
 - Cada excepción lleva su comentario con el motivo en el propio archivo (RF-9).
 - Tras fusionar el archivo, el usuario fuerza una comprobación («Check for updates» en
   Insights > Dependency graph > Dependabot) y, cuando llega un PR real, su ejecución del CI
   pasa con el token de solo lectura y sin secretos.
 - No existe ninguna excepción para ESLint ni para minimatch (RF-8) y sí para PostgreSQL
-  completo y para los mayores de node, eclipse-temurin y maven (RF-6, RF-7).
+  completo (RF-6), para los mayores de node y eclipse-temurin y para la imagen maven
+  completa, con su motivo justificado como excepción mínima (RF-7, RNF de excepciones
+  mínimas).
 - La documentación del paso manual de seguridad del repositorio está redactada (RF-12) y
   la decisión queda recogida en la memoria del proyecto (RF-9).
 - Las pruebas del backend y el build/lint del frontend siguen en verde: la configuración
