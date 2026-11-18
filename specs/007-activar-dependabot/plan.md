@@ -1,6 +1,6 @@
 # Plan 007 — Activar Dependabot
 
-Spec: `specs/007-activar-dependabot/spec.md` (Estado: aprobada). Este plan describe el **cómo**; el qué está en la spec. Es una spec de **configuración y documentación**: el único fichero nuevo es `.github/dependabot.yml` y la única edición es `MEMORY.md`. No se tocan `Backend/`, `Frontend/`, `.github/workflows/ci.yml`, `docker-compose.yml` ni los Dockerfile (solo se leen). Ningún punto del plan cae en el «⚠️ Pregunta antes» de AGENTS.md: no se cambia ningún DTO, ni `data.sql`, ni el esquema de una entidad, ni se añade ninguna dependencia al proyecto (un fichero de configuración de GitHub no es una dependencia del build).
+Spec: `specs/007-activar-dependabot/spec.md` (Estado: implementada). Este plan describe el **cómo**; el qué está en la spec. Es una spec de **configuración y documentación**: el único fichero nuevo es `.github/dependabot.yml` y la única edición es `MEMORY.md`. No se tocan `Backend/`, `Frontend/`, `.github/workflows/ci.yml`, `docker-compose.yml` ni los Dockerfile (solo se leen). Ningún punto del plan cae en el «⚠️ Pregunta antes» de AGENTS.md: no se cambia ningún DTO, ni `data.sql`, ni el esquema de una entidad, ni se añade ninguna dependencia al proyecto (un fichero de configuración de GitHub no es una dependencia del build).
 
 Depende de la spec 005 (etiqueta de PostgreSQL compartida con Testcontainers, RF-19) y de la spec 006 (el workflow que vigila github-actions y que validará cada PR de Dependabot).
 
