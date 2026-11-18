@@ -5,7 +5,7 @@ Memoria del proyecto entre sesiones (máximo ~50 líneas): resume o elimina lo q
 ## Estado actual
 
 - Backend completo: CRUD Categoría/Producto/Terminal, ciclo de vida de Pedido, Estadísticas (productos más vendidos, ranking terminales). Tests backend en verde: **124** (`mvn -f Backend/pom.xml test`), con Testcontainers contra PostgreSQL real y `MigracionFlywayTest`. Frontend: flujo Terminal/Cocina/Recogida y "Los más vendidos" funcionando; sin tests de UI.
-- Specs cerradas: **004** (PostgreSQL + Flyway V1/V2 + Testcontainers), **005 Docker** (T1-T14; T5-T7 y T12-T13 los ejecuta el usuario con Docker Desktop; cierra el cambio RF-22), **006 CI** (T1-T7 en verde en local; pendiente primera ejecución real con el usuario, ver "CI" más abajo; README con la insignia) y **007 Dependabot** (T1-T8; `dependabot.yml` activo en `main` con los 5 ecosistemas y el ignore total de `maven`; T7 verificada con los PRs de Dependabot fusionados y ninguno nuevo de la imagen `maven`).
+- Specs cerradas: **001** (modificación de pedido creado), **002** (búsqueda de pedido por código), **003** (productos más vendidos en la carta), **004** (PostgreSQL + Flyway V1/V2 + Testcontainers), **005 Docker** (T1-T14; T5-T7 y T12-T13 los ejecuta el usuario con Docker Desktop; cierra el cambio RF-22), **006 CI** (T1-T7 en verde en local; pendiente primera ejecución real con el usuario, ver "CI" más abajo; README con la insignia) y **007 Dependabot** (T1-T8; `dependabot.yml` activo en `main` con los 5 ecosistemas y el ignore total de `maven`; T7 verificada con los PRs de Dependabot fusionados y ninguno nuevo de la imagen `maven`).
 
 ## Decisiones (y por qué)
 

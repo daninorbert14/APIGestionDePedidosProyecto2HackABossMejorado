@@ -1,6 +1,6 @@
 # Plan 006 — CI con GitHub Actions: verificar cada cambio y publicar imágenes
 
-Spec: `specs/006-ci-github-actions/spec.md` (Estado: aprobada). Este plan describe el **cómo**; el qué está en la spec. No hay cambios de código de negocio: no se tocan `Backend/src`, `Frontend/src`, `docker-compose.yml` ni la API.
+Spec: `specs/006-ci-github-actions/spec.md` (Estado: implementada). Este plan describe el **cómo**; el qué está en la spec. No hay cambios de código de negocio: no se tocan `Backend/src`, `Frontend/src`, `docker-compose.yml` ni la API.
 
 ## 1. Enfoque técnico
 

@@ -1,5 +1,5 @@
 # Spec 006 — CI con GitHub Actions: verificar cada cambio y publicar imágenes
-Estado: aprobada
+Estado: implementada
 
 ## Contexto y objetivo
 Hoy la verificación del proyecto (compilar el backend, pasar sus pruebas, lint y build del frontend, validez de Docker Compose y construcción de imágenes) se hace a mano en local antes de fusionar. El objetivo es automatizar esas comprobaciones con GitHub Actions en cada cambio, para detectar errores antes de fusionar, y dejar publicadas las imágenes de backend y frontend en el registro de contenedores de GitHub cuando el código llega verde a main. Así, cualquier persona que clone el proyecto (o evalúe su calidad) ve el estado de las comprobaciones de un vistazo y dispone de imágenes construidas a partir de código verificado.
