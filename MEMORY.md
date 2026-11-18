@@ -26,6 +26,10 @@ Memoria del proyecto entre sesiones (máximo ~50 líneas): resume o elimina lo q
 - **Decisión** (`.github/dependabot.yml`): 5 ecosistemas en 6 entradas (`npm` en `/Frontend`, `maven` en `/Backend`, `github-actions` en `/`, `docker` en cada Dockerfile y `docker-compose` en la raíz), semanal los lunes 09:00 UTC, máximo 3 PRs abiertos por entrada, un PR por dependencia (sin `groups`) y `cooldown` de 7 días (las de seguridad no se retrasan; si «Check for updates» rechaza `cooldown` en algún ecosistema, se retira solo en esa entrada y se comenta aquí). Ignores con motivo en el propio archivo (RF-9): `postgres` completo en las tres entradas de imagen porque la etiqueta debe seguir coincidiendo con la de las pruebas con Testcontainers (RF-19 de la spec 005); `maven` (imagen de construcción) **completo**, no solo mayores, porque el JDK va dentro de su etiqueta (`3-eclipse-temurin-17`) y Dependabot interpreta la versión como `3` — el filtro de mayores no impedía subir de Java 17, como demostró el PR #20 (3-eclipse-temurin-17 → 3-eclipse-temurin-26), cerrado con `@dependabot ignore this dependency`; y solo los mayores de `node` (Node 22) y `eclipse-temurin` (Java 17), versiones fijadas por el proyecto. Ninguno para ESLint ni minimatch (RF-8): esperar la versión corregida (README, Limitaciones conocidas).
 - **PR con CI rojo (RF-10)**: no se fusiona: se revisa y se arregla en su propia rama, o se cierra con el comentario de Dependabot que ignora esa dependencia o esa versión mayor (p. ej. `@dependabot ignore this major version`) para que no se reabra con cada versión nueva.
 - **Alertas de seguridad (RF-12)**: activar las alertas y las actualizaciones de seguridad del repositorio es un paso manual e independiente del archivo de configuración; en un fork vienen desactivadas.
+- 18/11/2026: aviso picomatch (GHSA-fc5q-39xc-vjpf, ReDoS, vía Vite) aceptado: solo
+  desarrollo, `npm audit --omit=dev` limpio, sin versión corregida (la 4.0.7 es la
+  última). No usar `npm audit fix --force`: baja Vite a 6.2.7. Revisar cuando
+  Dependabot abra el PR de seguridad. El aviso de minimatch quedó resuelto por el PR #30.
 
 ### Docker — cambio RF-22 (spec 005)
 
