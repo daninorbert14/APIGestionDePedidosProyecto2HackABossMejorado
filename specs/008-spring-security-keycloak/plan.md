@@ -1,6 +1,6 @@
 # Plan 008 — Seguridad: backend como resource server JWT con roles TERMINAL, COCINA, RECOGIDA y ADMIN
 
-Spec: `specs/008-spring-security/spec.md` (Estado: aprobada). Este plan describe el **cómo**; el qué está en la spec. Es una spec de **backend + infraestructura de desarrollo + CI + documentación**: no se toca `Frontend/` (el login es la spec 009) ni la capa de negocio (`model`, `repository`, `service` quedan intactos; el servicio no cambia de firma, RF-28).
+Spec: `specs/008-spring-security-keycloak/spec.md` (Estado: aprobada). Este plan describe el **cómo**; el qué está en la spec. Es una spec de **backend + infraestructura de desarrollo + CI + documentación**: no se toca `Frontend/` (el login es la spec 009) ni la capa de negocio (`model`, `repository`, `service` quedan intactos; el servicio no cambia de firma, RF-28).
 
 > **✅ DECISIÓN APROBADA POR EL USUARIO («⚠️ Pregunta antes» de AGENTS.md: añadir una dependencia)**: RF-46 introduce **exactamente tres dependencias nuevas** en `Backend/pom.xml`: `spring-boot-starter-security`, `spring-boot-starter-oauth2-resource-server` (ambas de compilación) y `spring-security-test` (de test). **El usuario ha aprobado las tres**: T1 queda desbloqueada y se ejecuta sin esperar nada. No se añade ninguna otra dependencia; si apareciera una cuarta, se para y se pide aprobación (RF-46).
 > Ningún otro punto del plan cae en el «⚠️ Pregunta antes»: **ningún DTO que consume el frontend cambia** (`EstadoPedidoRequestDto` se queda igual), no se toca `data.sql` (no existe) ni el esquema de ninguna entidad.
