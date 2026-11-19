@@ -1,6 +1,6 @@
 # Tareas 008 — Seguridad: resource server JWT
 
-Espec: `specs/008-spring-security/spec.md`. Plan: `specs/008-spring-security/plan.md`. Orden por dependencias (backend primero; nada de frontend en esta spec). Cada tarea, 20–30 min.
+Espec: `specs/008-spring-security-keycloak/spec.md`. Plan: `specs/008-spring-security-keycloak/plan.md`. Orden por dependencias (backend primero; nada de frontend en esta spec). Cada tarea, 20–30 min.
 
 **Nota previa (RF-46)**: el usuario **ha aprobado** las tres dependencias (`spring-boot-starter-security`, `spring-boot-starter-oauth2-resource-server`, `spring-security-test`); T1 queda desbloqueada. Si apareciera una cuarta dependencia, se para y se pide aprobación.
 
