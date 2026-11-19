@@ -2,28 +2,28 @@
 
 Spec: `specs/008-spring-security/spec.md` (Estado: aprobada). Este plan describe el **cómo**; el qué está en la spec. Es una spec de **backend + infraestructura de desarrollo + CI + documentación**: no se toca `Frontend/` (el login es la spec 009) ni la capa de negocio (`model`, `repository`, `service` quedan intactos; el servicio no cambia de firma, RF-28).
 
-> **⚠️ DECISIÓN QUE DEBE APROBAR EL USUARIO («⚠️ Pregunta antes» de AGENTS.md: añadir una dependencia)**: RF-46 introduce **exactamente tres dependencias nuevas** en `Backend/pom.xml`: `spring-boot-starter-security`, `spring-boot-starter-oauth2-resource-server` (ambas de compilación) y `spring-security-test` (de test). La spec ya condiciona su incorporación a la aprobación explícita del usuario: **no se ejecuta T1 hasta que apruebe las tres**. No se añade ninguna otra dependencia; si apareciera una cuarta, se para y se pide aprobación (RF-46).
+> **✅ DECISIÓN APROBADA POR EL USUARIO («⚠️ Pregunta antes» de AGENTS.md: añadir una dependencia)**: RF-46 introduce **exactamente tres dependencias nuevas** en `Backend/pom.xml`: `spring-boot-starter-security`, `spring-boot-starter-oauth2-resource-server` (ambas de compilación) y `spring-security-test` (de test). **El usuario ha aprobado las tres**: T1 queda desbloqueada y se ejecuta sin esperar nada. No se añade ninguna otra dependencia; si apareciera una cuarta, se para y se pide aprobación (RF-46).
 > Ningún otro punto del plan cae en el «⚠️ Pregunta antes»: **ningún DTO que consume el frontend cambia** (`EstadoPedidoRequestDto` se queda igual), no se toca `data.sql` (no existe) ni el esquema de ninguna entidad.
 
 ## 1. Enfoque técnico
 
 Cuatro frentes, en este orden de dependencia:
 
-1. **Cadena de seguridad en el backend** (Spring Security 7 sobre Spring Boot 4.1.2): un `SecurityFilterChain` en `gestionpedidos/config/SecurityConfig.java` que apaga CSRF y sesiones (stateless, RF-47), integra el CORS existente (RF-48), autentica Bearer JWT contra el proveedor (RF-1, RF-2, RF-3), autoriza **por ruta** según la matriz (RF-17 a RF-25, RF-29, RF-30) con **denegado por defecto** y traduce los errores 401/403 a los cuerpos exactos de la spec (RF-31, RF-32). La única comprobación que no puede vivir en la ruta —la transición por **estado destino** (RF-26)— vive en **seguridad a nivel de método** sobre el controlador, apoyada en un componente de política (`PoliticaTransicionEstado`), por delante del servicio (RF-28) y fail-closed (RF-26).
+1. **Cadena de seguridad en el backend** (Spring Security 7 sobre Spring Boot 4.1.2): un `SecurityFilterChain` en `gestionpedidos/config/SecurityConfig.java` que apaga CSRF y sesiones (stateless, RF-47), integra el CORS existente **reutilizando `CorsConfig`** con `.cors(Customizer.withDefaults())` —sin crear un bean `corsConfigurationSource` nuevo (RF-48)—, autentica Bearer JWT contra el proveedor (RF-1, RF-2, RF-3), autoriza **por ruta** según la matriz (RF-17 a RF-25, RF-29, RF-30) con **denegado por defecto** y traduce los errores 401/403 a los cuerpos exactos de la spec (RF-31, RF-32). La única comprobación que no puede vivir en la ruta —la transición por **estado destino** (RF-26)— vive en **seguridad a nivel de método** sobre el controlador, apoyada en un componente de política (`PoliticaTransicionEstado`), por delante del servicio (RF-28) y fail-closed (RF-26).
 2. **Pruebas**: los 54 tests de controlador existentes se quedan sin token desactivando los filtros **en el propio test** (RF-36); los 5 de contexto/integración/migración arrancan con propiedades ficticias y/o un decodificador simulado de solo test (RF-37), siendo `PedidoIntegrationTest` el único cuyo comportamiento cambia (token ADMIN, RF-38); los tests nuevos de seguridad usan `jwt()` de `spring-security-test` (RF-39, RF-41) y la suite completa queda en verde sin red (RF-42).
-3. **Keycloak en desarrollo local**: servicio nuevo en `docker-compose.yml` con imagen de **versión fija**, puerto **8180** solo en `127.0.0.1`, realm importado desde un JSON versionado (RF-5, RF-45, RF-7) y la contraseña del administrador obligatoria con el mismo mecanismo que `DB_PASSWORD` (RF-44). El JSON del realm fija ya el contrato de la spec 009: cliente público con PKCE S256, redirect URIs con comodín, **web origins sin ruta** y `accessTokenLifespan` 300 s (RF-11, RF-12, RF-13).
+3. **Keycloak en desarrollo local**: servicio nuevo en `docker-compose.yml` con imagen de **versión fija**, puerto **8180** solo en `127.0.0.1` y `KC_HTTP_PORT=8180` para que el contenedor escuche en el mismo 8180 que el mapeo (coherencia: host `127.0.0.1:8180`, red interna `http://keycloak:8180/...` para el `jwk-set-uri` del backend en Docker, emisor fijo `http://localhost:8180/...` vía `KC_HOSTNAME`), realm importado desde un JSON versionado (RF-5, RF-45, RF-7) y la contraseña del administrador obligatoria con el mismo mecanismo que `DB_PASSWORD` (RF-44). El JSON del realm fija ya el contrato de la spec 009: cliente público con PKCE S256, redirect URIs con comodín, **web origins sin ruta** y `accessTokenLifespan` 300 s (RF-11, RF-12, RF-13).
 4. **CI y documentación**: el job `docker` gana el paso negativo gemelo y el valor ficticio de `KEYCLOAK_ADMIN_PASSWORD` (RF-41, RF-44); Dependabot ignora los mayores de la imagen de Keycloak (RF-50); y se corrigen/actualizan AGENTS.md, README raíz, Backend/README, `.env.example`, la colección Postman y `MEMORY.md` (RF-49, RF-51).
 
 ## 2. Decisiones sobre las dudas abiertas de la spec
 
 ### 2.1 La política de transición no se carga en los slices de los 54 tests (RF-36, RF-40)
 
-**Decisión**: `SecurityConfig` (que contiene el `SecurityFilterChain`, `@EnableMethodSecurity` y el `CorsConfigurationSource`) es una clase `@Configuration` normal y `PoliticaTransicionEstado` es un `@Component` normal; **ninguno de los dos se carga en un `@WebMvcTest`**, porque el `WebMvcTypeExcludeFilter` de Spring Boot 4.1 solo incluye en el escaneo `@Controller`, `@ControllerAdvice`, `Filter`, `SecurityFilterChain` **como bean declarado en una clase ya incluida**, `WebMvcConfigurer`, convertidores, etc. — no `@Configuration` ni `@Component` corrientes (verificado en el Javadoc de `@WebMvcTest` 4.1.2). Como en esos slices **no se activa `@EnableMethodSecurity`**, la anotación `@PreAuthorize` del controlador queda **inerte** y el bean de política **no hace falta**: los 54 tests siguen llamando al servicio mockeado igual que hoy. Se comprueba ejecutando la suite: si alguno fallara con «No bean named 'politicaTransicionEstado'», es que el slice cargó la seguridad y habría que revisar que `@EnableMethodSecurity` sigue viviendo solo en `SecurityConfig`.
+**Decisión**: `SecurityConfig` (que contiene el `SecurityFilterChain`, `@EnableMethodSecurity` y la integración de CORS con `.cors(Customizer.withDefaults())`) es una clase `@Configuration` normal y `PoliticaTransicionEstado` es un `@Component` normal; **ninguno de los dos se carga en un `@WebMvcTest`**, porque el `WebMvcTypeExcludeFilter` de Spring Boot 4.1 solo incluye en el escaneo `@Controller`, `@ControllerAdvice`, `Filter`, `SecurityFilterChain` **como bean declarado en una clase ya incluida**, `WebMvcConfigurer`, convertidores, etc. — no `@Configuration` ni `@Component` corrientes (verificado en el Javadoc de `@WebMvcTest` 4.1.2). Como en esos slices **no se activa `@EnableMethodSecurity`**, la anotación `@PreAuthorize` del controlador queda **inerte** y el bean de política **no hace falta**: los 54 tests siguen llamando al servicio mockeado igual que hoy. Se comprueba ejecutando la suite: si alguno fallara con «No bean named 'politicaTransicionEstado'», es que el slice cargó la seguridad y habría que revisar que `@EnableMethodSecurity` sigue viviendo solo en `SecurityConfig`. `CorsConfig` **tampoco** entra en el escaneo del slice (es `@Configuration`): por eso solo los tests nuevos de matriz lo importan explícitamente (§9.2) y los 54 existentes siguen sin él.
 **Descartadas**: (a) desactivar la seguridad por perfil o propiedad de configuración — lo prohíbe RF-40; (b) un bean de política permisivo en `src/main` — también lo prohíbe RF-40; (c) cargar la política en los slices con un bean permisivo — innecesario (no se necesita) y, si alguna vez fuese necesario, **solo existirá en `src/test`**, nunca en `src/main` (así lo fija RF-36); (d) no usar seguridad a nivel de método y comprobar el rol en el servicio — lo descarta RF-28 (cambiaría la firma y duplicaría la evaluación).
 
 ### 2.2 Versión fija de Keycloak (RF-45) y compatibilidad con web origins sin ruta (RF-12)
 
-**Decisión**: imagen **`keycloak/keycloak:26.8.2`** (etiqueta de versión fija de parche, verificada en Docker Hub en noviembre de 2026: la serie activa es 26.8 y `26.8.2` es su último parche; la propia documentación de Keycloak ya ofrece la guía de hostname con la versión 26.8.2 seleccionada). Keycloak representa los `webOrigins` como **origin** (`esquema://host[:puerto]`, sin ruta): el navegador envía el header `Origin` sin ruta, de modo que `http://localhost:5173` y `http://localhost:8081` son la forma válida, y conviven sin conflicto con redirect URIs que sí llevan comodín `/*`. La compatibilidad se **verifica** además de por lectura del JSON (T7): importación del realm sin errores + comprobación funcional del preflight (ver 2.5).
+**Decisión**: imagen **`keycloak/keycloak:26.8.2`** (etiqueta de versión fija de parche, verificada en Docker Hub en noviembre de 2026: la serie activa es 26.8 y `26.8.2` es su último parche; la propia documentación de Keycloak ya ofrece la guía de hostname con la versión 26.8.2 seleccionada). **Antes de usarla en T6 se comprueba que la etiqueta existe realmente**: `docker pull keycloak/keycloak:26.8.2` (o la consulta de tags de Docker Hub) y se documenta el resultado en la tarea; si no existiera, se para y se elige el último parche real de la serie 26.8, actualizando este plan (§2.2, §8.13), `dependabot.yml` y la documentación. Keycloak representa los `webOrigins` como **origin** (`esquema://host[:puerto]`, sin ruta): el navegador envía el header `Origin` sin ruta, de modo que `http://localhost:5173` y `http://localhost:8081` son la forma válida, y conviven sin conflicto con redirect URIs que sí llevan comodín `/*`. La compatibilidad se **verifica** además de por lectura del JSON (T7): importación del realm sin errores + comprobación funcional del preflight (ver 2.5).
 **Descartadas**: etiqueta `latest` o el tag menor `26.8` (no fijan versión, RF-45 exige fija, y `26.8` se repinta); `nightly` (no es estable); otra imagen/registro distinto sin necesidad.
 
 ### 2.3 API de Spring Security 7 con Spring Boot 4.1 (RF-46)
@@ -46,7 +46,8 @@ Cuatro frentes, en este orden de dependencia:
 | Fichero | Acción | Responsabilidad | RF |
 |---|---|---|---|
 | `Backend/pom.xml` | **editar** | Las tres dependencias de RF-46 (sin versiones; BOM de Boot 4.1.2). | RF-46 |
-| `Backend/src/main/java/gestionpedidos/config/SecurityConfig.java` | **crear** | `@Configuration` + `@EnableMethodSecurity`; bean `SecurityFilterChain` (stateless, CSRF off, CORS integrado, entry point 401, access denied handler 403, matriz de rutas con `denyAll` por defecto, `oauth2ResourceServer` JWT); bean `corsConfigurationSource` con `app.cors.allowed-origin`. | RF-1, RF-17 a RF-25, RF-29, RF-30, RF-31, RF-47, RF-48 |
+| `Backend/src/main/java/gestionpedidos/config/SecurityConfig.java` | **crear** | `@Configuration` + `@EnableMethodSecurity`; bean `SecurityFilterChain` (stateless, CSRF off, CORS integrado con `.cors(Customizer.withDefaults())` reutilizando `CorsConfig` —**sin** bean `corsConfigurationSource` nuevo—, entry point 401, access denied handler 403, matriz de rutas con `denyAll` por defecto, `oauth2ResourceServer` JWT). | RF-1, RF-17 a RF-25, RF-29, RF-30, RF-31, RF-47, RF-48 |
+| `Backend/src/main/java/gestionpedidos/CorsConfig.java` | **sin cambios (se reutiliza)** | Su `WebMvcConfigurer` existente (`/api/**`, origen `app.cors.allowed-origin`) sigue siendo la **única** fuente de CORS; `SecurityConfig` lo consume con `.cors(Customizer.withDefaults())` (el `CorsFilter` de seguridad resuelve contra la configuración MVC de este bean). | RF-48 |
 | `Backend/src/main/java/gestionpedidos/config/ConverterRolesJwt.java` | **crear** | **Punto único de conversión** (RF-9): claim `realm_access.roles` → autoridades `ROLE_TERMINAL/COCINA/RECOGIDA/ADMIN`. | RF-8, RF-9 |
 | `Backend/src/main/java/gestionpedidos/config/EntryPointNoAutenticado.java` | **crear** | `AuthenticationEntryPoint`: 401 con cuerpo exacto de RF-2 y cabecera `WWW-Authenticate: Bearer`. | RF-2, RF-3, RF-32 |
 | `Backend/src/main/java/gestionpedidos/config/ManejadorAccesoDenegado.java` | **crear** | `AccessDeniedHandler`: 403 con el cuerpo de RF-31 (denegación de ruta con token válido). | RF-31, RF-32 |
@@ -59,12 +60,12 @@ Cuatro frentes, en este orden de dependencia:
 | `Backend/src/test/java/gestionpedidos/config/SeguridadTestConfig.java` | **crear** | `@TestConfiguration` de solo test: `JwtDecoder` simulado que devuelve un token con rol ADMIN para un valor fijo (y lanza `JwtException` con otro). | RF-37, RF-38 |
 | `Backend/src/test/java/gestionpedidos/controller/*.java` (5 clases) | **editar** | `@AutoConfigureMockMvc(addFilters = false)` en cada una (solo la anotación; ninguna aserción cambia). | RF-36 |
 | `Backend/src/test/java/gestionpedidos/PedidoIntegrationTest.java` | **editar** | `@Import(SeguridadTestConfig)` y cabecera `Authorization: Bearer …` con token ADMIN en todas las peticiones. | RF-38 |
-| `Backend/src/test/java/gestionpedidos/seguridad/SeguridadRutasTest.java` | **crear** | Matriz endpoint × rol, cuerpos exactos 401/403, ruta desconocida, token inválido/sin rol, preflight OPTIONS, swagger público. | RF-17 a RF-25, RF-29 a RF-32, RF-39, RF-48 |
+| `Backend/src/test/java/gestionpedidos/seguridad/SeguridadRutasTest.java` | **crear** | `@WebMvcTest` de los 5 controladores con `@Import(SecurityConfig, CorsConfig, PoliticaTransicionEstado)` (lista fija, §9.2): matriz endpoint × rol, cuerpos exactos 401/403, ruta desconocida, token inválido/sin rol, preflight OPTIONS, swagger público. | RF-17 a RF-25, RF-29 a RF-32, RF-39, RF-48 |
 | `Backend/src/test/java/gestionpedidos/seguridad/SeguridadTransicionesTest.java` | **crear** | Transición por rol/destino, cuerpo nulo, precedencia 401→403→400→403→400/404, doble fallo y RF-34 (403 y no 500). | RF-26, RF-27, RF-34, RF-43 |
-| `docker-compose.yml` | **editar** | Servicio `keycloak` (imagen fija, 8180 en 127.0.0.1, importación de realm, admin con `:?`) y variables `JWT_*` del `backend`. | RF-5, RF-6, RF-15, RF-44, RF-45 |
+| `docker-compose.yml` | **editar** | Servicio `keycloak` (imagen fija, `KC_HTTP_PORT=8180`, 8180 en 127.0.0.1, importación de realm, admin con `:?`) y variables `JWT_*` del `backend` (issuer `localhost:8180`, jwk `http://keycloak:8180/...`). | RF-5, RF-6, RF-15, RF-44, RF-45 |
 | `keycloak/realm-gestion-pedidos.json` | **crear** | Realm versionado: 4 roles, usuarios demo (contraseñas ficticias), cliente `frontend-app` público con PKCE S256/redirect URIs/web origins/300 s y cliente `dev-test` con direct access grant; sin secretos. | RF-7, RF-11, RF-12, RF-13, RF-14 |
 | `.env.example` | **editar** | `KEYCLOAK_ADMIN_PASSWORD=` vacía + `KEYCLOAK_ADMIN_USERNAME`, `JWT_ISSUER_URI` y `JWT_JWK_SET_URI` documentadas por nombre, sin valores reales. | RF-44, RF-51 |
-| `.github/workflows/ci.yml` | **editar** | Job `docker`: valor ficticio de `KEYCLOAK_ADMIN_PASSWORD` en «Validar Compose» y en el paso negativo sin `DB_PASSWORD`, más el paso gemelo sin `KEYCLOAK_ADMIN_PASSWORD`. | RF-41, RF-44 |
+| `.github/workflows/ci.yml` | **editar** | Job `docker`: valor ficticio de `KEYCLOAK_ADMIN_PASSWORD` en «Validar Compose» y en el paso negativo sin `DB_PASSWORD`, más el paso gemelo sin `KEYCLOAK_ADMIN_PASSWORD` (con `DB_PASSWORD` ficticia): **un paso verde y dos rojos**. | RF-41, RF-44 |
 | `.github/dependabot.yml` | **editar** | Ignore `version-update:semver-major` de `keycloak/keycloak` en la entrada `docker-compose`, con comentario en español. | RF-50 |
 | `AGENTS.md` | **editar** | Línea 11 («ruta inexistente → 404» → «401 sin token y 403 con token válido»; aclara 400 vs 409), sección Entorno (JWT por nombre), sección Docker (dos contraseñas obligatorias; puerto del frontend → editar el realm). | RF-17, RF-27, RF-44, RF-49, RF-51 |
 | `README.md` | **editar** | Configuración (dos contraseñas, variables JWT, puerto 8180, ejemplo exacto de curl con token, «cambiar el puerto del frontend exige editar el JSON del realm») y nota de estado intermedio (frontend en 401 hasta la 009). | RF-14, RF-44, RF-49, RF-51 |
@@ -137,7 +138,8 @@ Se mantiene tal cual lo que ya fija AGENTS.md: `POST`/`PUT` de entidad de primer
 ```text
 PETICIÓN
 │
-├─[1] Filtro CORS de seguridad (bean corsConfigurationSource, origen = app.cors.allowed-origin)
+├─[1] Filtro CORS de seguridad (`.cors(Customizer.withDefaults())`: reutiliza el `WebMvcConfigurer`
+│     de `CorsConfig` existente, origen = app.cors.allowed-origin; SIN bean corsConfigurationSource nuevo)
 │     SI es preflight OPTIONS → respuesta 200/204 con cabeceras CORS, SIN token → FIN   (RF-18, RF-48)
 │
 ├─[2] Autenticación Bearer (JWT contra JWT_ISSUER_URI / JWT_JWK_SET_URI)
@@ -229,7 +231,7 @@ Spring Boot 4.1 compila con `-parameters` (heredado del parent), de modo que `#d
 *Nota*: el **issuer** es fijo (`localhost:8180`) y las **claves** cambian entre IDE (`localhost`) y Docker (`keycloak`), que es exactamente RF-5/RF-6.
 
 **8.8 `KC_HOSTNAME=http://localhost:8180` para el emisor fijo (RF-5).**
-Con la opción de hostname v2 de Keycloak 26, el `iss` de cualquier token es `http://localhost:8180/realms/gestion-pedidos` **independientemente** del host por el que se acceda (IDE, `localhost` desde el host o `keycloak` desde la red interna), y el backend solo necesita alcanzar las claves por la URL interna.
+Con la opción de hostname v2 de Keycloak 26, el `iss` de cualquier token es `http://localhost:8180/realms/gestion-pedidos` **independientemente** del host por el que se acceda (IDE, `localhost` desde el host o `keycloak` desde la red interna), y el backend solo necesita alcanzar las claves por la URL interna `http://keycloak:8180/...` (el mismo 8180 que fija `KC_HTTP_PORT=8180` en el servicio, coherente con el mapeo `127.0.0.1:8180:8180`).
 *Descartada*: dejar el hostname dinámico (modo dev) — un token obtenido vía `keycloak:8180` llevaría `iss=http://keycloak:8180/...` y el backend, que valida contra `localhost:8180`, lo rechazaría.
 
 **8.9 La contraseña del administrador del proveedor se llama `KEYCLOAK_ADMIN_PASSWORD` en el `.env` y se mapea a `KC_BOOTSTRAP_ADMIN_PASSWORD` (RF-44).**
@@ -249,8 +251,12 @@ Prueban autorización sin contenedor de base de datos: rápidos, sin red y sin T
 *Descartado*: un único test gigante (ilegible) o una clase por RF (infla la suite).
 
 **8.13 Versión fija `keycloak/keycloak:26.8.2` y `start-dev --import-realm` (RF-45, RF-7).**
-Etiqueta de parche exacta (reproducible y apta para el ignore de mayores de Dependabot) y modo desarrollo con importación automática del JSON versionado.
+Etiqueta de parche exacta (reproducible y apta para el ignore de mayores de Dependabot) y modo desarrollo con importación automática del JSON versionado; **antes de usarla, T6 comprueba con `docker pull` que la etiqueta existe** (§2.2).
 *Descartadas*: `latest`/`26.8` (no fijan versión); importar el realm a mano con `kc.sh import` (paso manual, olvidadizo); `start` en modo producción (exige TLS y certificados).
+
+**8.14 CORS: reutilizar `CorsConfig` existente con `.cors(Customizer.withDefaults())`, sin bean `corsConfigurationSource` nuevo (RF-48).**
+`CorsConfig` (`WebMvcConfigurer` con `/api/**` y `app.cors.allowed-origin`) ya es la única fuente de CORS de la aplicación; el `CorsFilter` de seguridad, al no encontrar bean `corsConfigurationSource`, resuelve contra la configuración MVC que declara ese `WebMvcConfigurer`, de modo que preflight y peticiones reales siguen usando **exactamente** el mismo origen y métodos de hoy, con una sola fuente de verdad. Como `CorsConfig` es una clase `@Configuration` que no entra en el escaneo de un `@WebMvcTest`, `SeguridadRutasTest` la importa explícitamente (`@Import(SecurityConfig, CorsConfig, PoliticaTransicionEstado)`).
+*Descartado*: declarar un bean `corsConfigurationSource` nuevo dentro de `SecurityConfig` — duplicaría la regla de origen/métodos en dos sitios que podrían divergir (mismo problema que RF-9 evita con el converter único) y exigiría mantener `CorsConfig` y la cadena sincronizados.
 
 ## 9. Estrategia de tests
 
@@ -268,15 +274,23 @@ Comprobación transversal: `git diff` vacío en `model/`, `repository/`, `servic
 
 ### 9.2 Tests nuevos (RF-39)
 
-- **`SeguridadRutasTest`** — `@WebMvcTest(PedidoController|ProductoController|…)` + `@Import(SecurityConfig, PoliticaTransicionEstado)` + `@MockitoBean JwtDecoder` + `jwt()`/`jwt().authorities(...)` de `spring-security-test`:
+- **`SeguridadRutasTest`** — slice **determinista**: `@WebMvcTest({PedidoController, ProductoController, CategoriaController, TerminalController, EstadisticasController})` + `@Import(SecurityConfig, CorsConfig, PoliticaTransicionEstado)` + `@MockitoBean JwtDecoder` (+ servicios mockeados con `@MockitoBean`) + `jwt()`/`jwt().authorities(...)` de `spring-security-test`. **Lista completa de lo que carga el slice** (fija y única, para que el test sea determinista):
+  - `SecurityConfig` → trae dentro sus beans `SecurityFilterChain`, `EntryPointNoAutenticado`, `ManejadorAccesoDenegado` y `ConverterRolesJwt` (declarados allí), más `@EnableMethodSecurity` (la `@PreAuthorize` de `PedidoController` queda activa);
+  - `CorsConfig` → el `WebMvcConfigurer` de CORS, sin el cual el test de preflight no resuelve (RF-48);
+  - `PoliticaTransicionEstado` → obligatorio ya con `@EnableMethodSecurity` activo para los tests de `PedidoController`;
+  - los **5 controladores** de arriba; `GlobalExceptionHandler` entra solo (el slice incluye `@ControllerAdvice`);
+  - `OpenApiConfig` **no** se importa: en el slice solo se comprueba que `/v3/api-docs` no devuelva 401/403 (el 200 real se verifica en T10);
+  - **No** se importa nada más: servicios, repositorios y `SeguridadTestConfig` quedan fuera (repos van mockeados).
+
+  Casos:
   - por cada fila de la matriz de §5.1: **200** con rol permitido, **403** con rol no permitido, **401** sin token;
   - cuerpos **letra por letra**: 401 = RF-2 (+ `WWW-Authenticate: Bearer` y `Content-Type: application/json`), 403 de ruta = RF-31;
   - ruta inexistente: 401 sin token / 403 con token (RF-17);
   - token sin rol alguno o con rol desconocido → solo públicas (RF-18);
   - token inválido (decoder que lanza `JwtException`) → 401 con el cuerpo de RF-2 (RF-2);
   - preflight `OPTIONS /api/pedidos` con `Origin` → 200/204 sin token (RF-48);
-  - `/v3/api-docs` sin token no devuelve 401/403 en el slice (llega al dispatcher → la regla es permitAll; el 200 real se verifica con curl en T10, RF-19).
-- **`SeguridadTransicionesTest`** — mismo molde, centrado en `PATCH /api/pedidos/{id}/estado`:
+  - `/v3/api-docs` sin token no devuelve 401/403 en el slice (llega al dispatcher → la regla es permitAll; el 200 real se verifica en T10, con curl y en el navegador, RF-19).
+- **`SeguridadTransicionesTest`** — mismo molde (mismos controladores y misma lista de `@Import`: `SecurityConfig`, `CorsConfig`, `PoliticaTransicionEstado`), centrado en `PATCH /api/pedidos/{id}/estado`:
   - matriz destino × rol (incluidos los 403 de RF-27 con su cuerpo exacto y el 403 de RF-31 para TERMINAL);
   - **doble fallo**: COCINA `CREADO→PAGADO` → **403 RF-27**, nunca 400 (RF-43);
   - rol que cubre el destino pero salta el orden (p. ej. COCINA `CREADO→LISTO`, ADMIN `CREADO→ENTREGADO`) → 400 «Transición de estado no permitida: X → Y»;
@@ -289,7 +303,7 @@ Comprobación transversal: `git diff` vacío en `model/`, `repository/`, `servic
 ### 9.3 CI (RF-41, RF-42)
 
 - `mvn -B -f Backend/pom.xml test` sigue **sin variables de entorno**: los contextos usan propiedades ficticias/decoder simulado; ningún test contacta con Keycloak (que **no existe** en el CI).
-- Job `docker`: los tres pasos de Compose con valores ficticios (T8) no levantan nada ni necesitan red.
+- Job `docker`: los tres pasos de Compose dan **un paso verde y dos rojos** (T8): (1) «Validar Compose» con `DB_PASSWORD=ci-dummy KEYCLOAK_ADMIN_PASSWORD=ci-dummy` → verde; (2) negativo sin `DB_PASSWORD` **con `KEYCLOAK_ADMIN_PASSWORD=ci-dummy`** → rojo previsto, falla **solo** por `DB_PASSWORD`; (3) gemelo sin `KEYCLOAK_ADMIN_PASSWORD` **con `DB_PASSWORD=ci-dummy`** → rojo previsto, falla **solo** por `KEYCLOAK_ADMIN_PASSWORD`. No levantan nada ni necesitan red.
 - Verde = 124 existentes + los nuevos (RF-42).
 
 ### 9.4 Verificación manual (con el usuario al final)
@@ -297,8 +311,8 @@ Comprobación transversal: `git diff` vacío en `model/`, `repository/`, `servic
 1. `mvn -f Backend/pom.xml test` en verde con el recuento completo.
 2. `docker compose up` (con `.env` de ejemplo): Keycloak importa el realm; curl → 200 con el rol adecuado, 401 sin token (cuerpo RF-2 + `WWW-Authenticate`), 403 con rol insuficiente (RF-31) y 403 de transición (RF-27) (RF-16).
 3. Preflight de Keycloak (web origins sin ruta) e `iss` del token (§2.5).
-4. Swagger sin token con el botón «Authorize» (RF-19).
-5. `docker compose config` con y sin cada contraseña (RF-44) — en el CI, los tres pasos gemelos.
+4. Swagger sin token con el botón «Authorize» (RF-19), **comprobado además en el navegador (Chrome DevTools)**: `/doc/swagger-ui.html` carga con sus estilos (CSS/JS del bundle, sin 401/403 en los recursos estáticos) y «Authorize» acepta un token de ADMIN. Si la verificación descubre una ruta no listada en la matriz de §5.1 (p. ej. algún recurso estático de Swagger que responda 401/403), se **añade a la matriz y a los tests de T4** y se itera hasta que el navegador la muestre sin errores.
+5. `docker compose config` con y sin cada contraseña (RF-44) — en el CI: **un paso verde** (ambas ficticias) **y dos rojos** (uno por cada contraseña ausente, con la otra ficticia).
 6. Tras fusionar y con el usuario: «Check for updates» de Dependabot sin errores ni PR de salto mayor de Keycloak (RF-50).
 7. Frontend: **sin cambios** → no requiere build/lint ni verificación en navegador; se deja constancia del estado intermedio (401 hasta la 009).
 
@@ -312,7 +326,8 @@ Comprobación transversal: `git diff` vacío en `model/`, `repository/`, `servic
 | `#dto` no resuelve en el `@PreAuthorize` | Compilación con `-parameters` heredada del parent; alternativa `#p0.estado` (decisión 8.6). |
 | El JWKS del decoder ficticio provoca llamadas de red en los tests | Los contextos de test usan URLs ficticias y el `JwtDecoder` simulado sustituye al auto-configurado (`@ConditionalOnMissingBean`); ningún test decodifica contra la red (RF-41). |
 | Keycloak ignora los web origins sin ruta o rechaza los redirect con `/*` | Verificación funcional del preflight en T7 (§2.5); si fallara, se revisa el JSON contra la consola de la versión 26.8.2 antes de dar T7 por hecha. |
-| El `docker compose config` del CI falla por la nueva variable obligatoria | T8 pasa `KEYCLOAK_ADMIN_PASSWORD=ci-dummy` en los pasos previstos por RF-41/RF-44; el nuevo paso gemelo es el que la comprueba ausente. |
+| El `docker compose config` del CI falla por la nueva variable obligatoria | T8 pasa `KEYCLOAK_ADMIN_PASSWORD=ci-dummy` en «Validar Compose» y en el negativo sin `DB_PASSWORD` (para que falle **solo** por esa ausencia), y `DB_PASSWORD=ci-dummy` en el gemelo sin `KEYCLOAK_ADMIN_PASSWORD`: **un verde, dos rojos** (RF-41, RF-44). |
+| La etiqueta `keycloak/keycloak:26.8.2` no existe en Docker Hub | T6 comprueba la etiqueta con `docker pull` **antes** de usarla y documenta el resultado; si no existiera, se elige el último parche real de la serie 26.8 y se actualizan plan (§2.2, §8.13), `dependabot.yml` y docs. |
 | Estado intermedio: el frontend actual recibe 401 | Aceptado y documentado en la spec (despliegue posterior a la 009); se anota en README/MEMORY en T9/T10. |
 
 ## 11. Cobertura de RF (RF-1 a RF-51)
@@ -329,7 +344,7 @@ Comprobación transversal: `git diff` vacío en `model/`, `repository/`, `servic
 - **RF-16** → curl 200/401/403 con cuerpos exactos (T7, T10).
 - **RF-17** → `denyAll` (T2) + tests 401/403 de ruta desconocida (T4) + fila nueva de documentación (T9).
 - **RF-18** → OPTIONS públicas y nota de Actuator fuera de alcance (T2) + test de preflight (T4).
-- **RF-19** → `OpenApiConfig` (Bearer JWT) + swagger permitAll (T2) + test de no-401 en slice (T4) + verificación real con curl (T10).
+- **RF-19** → `OpenApiConfig` (Bearer JWT) + swagger permitAll (T2) + test de no-401 en slice (T4) + verificación real con curl **y en el navegador con Chrome DevTools (estilos de Swagger UI)** (T10).
 - **RF-20 a RF-25, RF-29, RF-30** → matriz en `SecurityConfig` (T2) + tests endpoint × rol (T4).
 - **RF-26** → `PoliticaTransicionEstado` + `@PreAuthorize` (T3) + tests de destino/nulos (T5).
 - **RF-27** → cuerpo de la política + `@ExceptionHandler(AccessDeniedException)` (T3) + tests (T5) + corrección de la fila 409→400 en Backend/README (T9).
@@ -348,10 +363,10 @@ Comprobación transversal: `git diff` vacío en `model/`, `repository/`, `servic
 - **RF-42** → `mvn test` verde con 124 + nuevos (T10).
 - **RF-43** → precedencia codificada por diseño (§6.1) y testeada en el orden exacto (T5).
 - **RF-44** → `:?` de `KEYCLOAK_ADMIN_PASSWORD` en Compose (T6) + dos pasos negativos gemelos del CI (T8) + documentación (T9).
-- **RF-45** → imagen `26.8.2` fija, 8180 solo en 127.0.0.1, realm importado y ausencia en el CI (T6, T7, T8).
-- **RF-46** → exactamente tres dependencias, **con aprobación del usuario** (T1).
+- **RF-45** → imagen `26.8.2` fija **(verificada con `docker pull` en T6)**, 8180 solo en 127.0.0.1 con `KC_HTTP_PORT=8180` coherente, realm importado y ausencia en el CI (T6, T7, T8).
+- **RF-46** → exactamente tres dependencias, **aprobadas por el usuario** (T1).
 - **RF-47** → stateless + CSRF desactivado (T1).
-- **RF-48** → `corsConfigurationSource` integrado en la cadena (T1) + test de preflight (T4).
+- **RF-48** → `CorsConfig` existente integrado en la cadena con `.cors(Customizer.withDefaults())`, sin bean `corsConfigurationSource` nuevo (T2) + `CorsConfig` importado en `SeguridadRutasTest` + test de preflight (T4).
 - **RF-49** → README raíz, AGENTS.md, Backend/README, colección Postman y MEMORY (T9, T10), con la corrección del 409 limitada a `Backend/README.md:263` y la línea 11 de AGENTS.md.
 - **RF-50** → ignore de mayores de `keycloak/keycloak` con comentario en español (T8) + MEMORY y «Check for updates» tras fusionar (T10).
 - **RF-51** → `JWT_ISSUER_URI`/`JWT_JWK_SET_URI` por nombre, sin valores reales, en AGENTS.md, README raíz, Backend/README y `.env.example` (T6, T9).
