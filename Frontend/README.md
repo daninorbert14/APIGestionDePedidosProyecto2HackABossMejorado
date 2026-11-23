@@ -8,14 +8,16 @@ La aplicación no contiene lógica de negocio, sino que consume los endpoints ex
 
 ## Tecnologías utilizadas
 
-* React
+* React 19
 * JavaScript
-* Vite
-* React Router DOM
+* Vite 8
+* React Router DOM 7
 * Fetch API
 * CSS (BEM, tokens en `styles/tokens.css`)
 * Sonner
 * Lucide (iconos)
+* ESLint
+* Docker (imagen multietapa: Node 22 para compilar y nginx para servir los estáticos)
 
 ## Arquitectura del proyecto
 
@@ -124,23 +126,47 @@ GET /api/estadisticas/productos-mas-vendidos
 ## Estructura del proyecto
 
 ```text
-src/
-├── api/
-├── components/
-│   ├── common/
-│   └── vistaCocina/
-│       ├── ListaPedidos.jsx
-│       ├── PedidoCard.jsx
-│       └── PedidoLineaInput.jsx
-├── hooks/
-├── pages/
-├── router/
-├── styles/
-├── utils/
-│   ├── constants.js
-│   └── dtos.js
-├── App.jsx
-└── main.jsx
+Frontend/
+├── Dockerfile
+├── nginx.conf
+├── eslint.config.js
+├── vite.config.js
+├── package.json
+├── public/
+└── src/
+    ├── api/
+    │   ├── estadisticasApi.js
+    │   ├── fetchHelper.js
+    │   ├── pedidosApi.js
+    │   ├── productosApi.js
+    │   └── terminalesApi.js
+    ├── components/
+    │   ├── common/
+    │   │   ├── ErrorMessage.jsx
+    │   │   ├── Layout.jsx
+    │   │   └── Loading.jsx
+    │   └── vistaCocina/
+    │       ├── ListaPedidos.jsx
+    │       ├── PedidoCard.jsx
+    │       └── PedidoLineaInput.jsx
+    ├── hooks/
+    │   ├── usePedidosPorEstados.js
+    │   ├── useProductos.js
+    │   ├── useProductosMasVendidos.js
+    │   └── useTerminales.js
+    ├── pages/
+    │   ├── CocinaPage.jsx
+    │   ├── NotFoundPage.jsx
+    │   ├── RecogidaPage.jsx
+    │   └── TerminalPage.jsx
+    ├── router/
+    │   └── AppRouter.jsx
+    ├── styles/
+    ├── utils/
+    │   ├── constants.js
+    │   └── dtos.js
+    ├── App.jsx
+    └── main.jsx
 ```
 
 ## Manejo de errores
@@ -152,6 +178,7 @@ La aplicación incorpora un manejo básico de errores para mejorar la experienci
 * Estados de carga mediante el componente Loading.
 * Notificaciones mediante Sonner.
 * Mensajes amigables cuando el servidor no está disponible.
+* Tiempo máximo de 8 segundos por petición (`fetchJSON`): si el servidor no responde, se muestra "El servidor no responde. Inténtalo de nuevo más tarde."
 * Página personalizada para rutas no existentes (404).
 
 Ejemplo de mensaje mostrado:
@@ -162,7 +189,7 @@ Ejemplo de mensaje mostrado:
 
 La aplicación consume la API REST desarrollada en `Backend/` de este repositorio.
 
-La URL base se lee de la variable de entorno `VITE_API_URL` (Vite). Crea un archivo `Frontend/.env` en la raíz del proyecto con:
+La URL base se lee de la variable de entorno `VITE_API_URL` (Vite). Crea un archivo `.env` dentro de la carpeta `Frontend/` (es decir, `Frontend/.env`) con:
 
 ```dotenv
 VITE_API_URL=http://localhost:8080/api
@@ -176,15 +203,20 @@ Es necesario que el backend esté en ejecución antes de iniciar el frontend.
 
 ## Cómo ejecutar el proyecto
 
-### 1. Clonar el repositorio
+**Requisitos**: Node 22 (la misma versión que usan el CI y la imagen Docker) y el backend en ejecución (ver el README de la raíz).
+
+### 1. Clonar el repositorio y entrar en la carpeta del frontend
 
 ```bash
 git clone <url-del-repositorio>
+cd <carpeta-del-repositorio>/Frontend
 ```
+
+Todos los comandos siguientes se ejecutan desde `Frontend/`.
 
 ### 2. Configurar la URL de la API
 
-Crea un archivo `Frontend/.env` en la raíz del proyecto con:
+Crea el archivo `Frontend/.env` con:
 
 ```dotenv
 VITE_API_URL=http://localhost:8080/api
@@ -196,17 +228,25 @@ VITE_API_URL=http://localhost:8080/api
 npm install
 ```
 
+Para una instalación reproducible desde `package-lock.json` (la que usa el CI), `npm ci`.
+
 ### 4. Ejecutar la aplicación
 
 ```bash
 npm run dev
 ```
 
-### 5. Generar la versión de producción
+### 5. Comprobar el código y generar la versión de producción
 
 ```bash
-npm run build
+npm run lint      # ESLint
+npm run build     # genera la carpeta dist/
+npm run preview   # sirve localmente el resultado de build
 ```
+
+### Con Docker
+
+`Frontend/Dockerfile` compila la aplicación con Node 22 y la sirve con nginx, con redirección a `index.html` para que React Router funcione al recargar rutas como `/cocina`. Normalmente no se usa a mano: se levanta con `docker compose up --build` desde la raíz (el frontend queda en el puerto 8081).
 
 ## Suposiciones y limitaciones
 
@@ -216,6 +256,7 @@ npm run build
 * Las validaciones de negocio se realizan exclusivamente en el backend.
 * No existe persistencia local — si se recarga la página, la terminal seleccionada y el carrito se pierden.
 * Sin accesibilidad implementada.
+* No hay tests automáticos de interfaz; están previstos como mejora (Vitest y React Testing Library). El CI solo comprueba `lint` y `build`.
 * Condición de carrera posible entre el polling automático (15 s) y una acción manual del usuario (p. ej. cobrar un pedido justo cuando se dispara el refresco).
 * Un producto desactivado mientras está en el carrito no se detecta hasta que el backend lo rechaza al enviar el pedido.
 
@@ -225,5 +266,5 @@ npm run build
   (`vite` → `tinyglobby` → `fdir` → `picomatch`). Solo se usa al compilar y en el
   servidor de desarrollo, con patrones del propio proyecto; en producción nginx sirve
   archivos estáticos ya construidos. `npm audit --omit=dev` sale limpio. A fecha de
-  18/11/2026 no existe versión corregida; se actualizará cuando Dependabot proponga
+  23/11/2026 no existe versión corregida (la última sigue siendo la 4.0.7); se actualizará cuando Dependabot proponga
   el parche.
