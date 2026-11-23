@@ -386,7 +386,7 @@
               }
             },
             "url": {
-              "raw": "http://localhost:8080/api/pedidos/1/productos/2",
+              "raw": "http://localhost:8080/api/pedidos/{pedidoId}/eliminar-producto/{productoId}?cantidad=N",
               "protocol": "http",
               "host": [
                 "localhost"

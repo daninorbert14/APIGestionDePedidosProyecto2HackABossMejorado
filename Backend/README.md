@@ -7,14 +7,18 @@ Permite gestionar terminales, categorías, productos y pedidos con sus líneas d
 
 ## Tecnologías utilizadas
 
-- Java 17+
-- Spring Boot
-- Spring Web
+- Java 17
+- Spring Boot 4.1
+- Spring Web (MVC)
 - Spring Data JPA
 - Hibernate
-- PostgreSQL
+- PostgreSQL 17
+- Flyway (migraciones de base de datos)
+- Bean Validation
 - Lombok
 - Swagger / SpringDoc OpenAPI
+- JUnit 5, Mockito y Testcontainers (tests)
+- Docker (`Backend/Dockerfile`, imagen multietapa)
 
 ---
 
@@ -42,6 +46,21 @@ Además se utilizan:
 - **Pedido** → Ticket de compra generado desde una terminal
 - **PedidoProducto** → Línea de pedido (relación Pedido ↔ Producto con cantidad y precio unitario)
 - **EstadoPedido** → Enum que controla el flujo del pedido
+
+---
+
+## Base de datos y migraciones
+
+El esquema no lo crea Hibernate: lo gestiona **Flyway** con las migraciones de `src/main/resources/db/migration/`.
+
+| Migración | Qué hace |
+|---|---|
+| `V1__crear_esquema.sql` | Crea las tablas del modelo |
+| `V2__catalogo_ejemplo.sql` | Carga un catálogo de ejemplo (terminales, categorías y productos) con IDs fijos |
+
+- Hibernate se limita a **validar** que las entidades encajan con el esquema (`spring.jpa.hibernate.ddl-auto=validate`).
+- Para cambiar el esquema se añade una migración nueva (`V3__...`); las ya aplicadas no se editan.
+- Solo se admite PostgreSQL: si `DB_URL` apunta a otro motor, `MotorPostgresqlValidator` detiene el arranque con un mensaje claro.
 
 ---
 
@@ -258,9 +277,9 @@ GET /api/estadisticas/ranking-terminales
 >
 > | Código | Cuerpo | Casos |
 > |---|---|---|
-> | `400` | `{"Error: ": "..."}` | validación de negocio, parámetro obligatorio ausente, tipo de parámetro inválido, JSON mal formado |
+> | `400` | `{"Error: ": "..."}` | validación de negocio (incluida una transición de estado no permitida), parámetro obligatorio ausente, tipo de parámetro inválido, JSON mal formado |
 > | `404` | `{"Error: ": "..."}` | recurso no encontrado, ruta inexistente |
-> | `409` | `{"Error: ": "..."}` | transición de estado no permitida |
+> | `409` | `{"Error: ": "..."}` | nombre duplicado al crear una categoría, un producto o una terminal |
 > | `500` | `{"Error inesperado: ": "..."}` | error no controlado |
 
 ---
@@ -279,6 +298,7 @@ spring.datasource.driver-class-name=org.postgresql.Driver
 spring.datasource.username=${DB_USERNAME}
 spring.datasource.password=${DB_PASSWORD}
 
+# validate: el esquema lo crean las migraciones Flyway; Hibernate solo lo comprueba
 spring.jpa.hibernate.ddl-auto=validate
 spring.jpa.show-sql=true
 
@@ -328,16 +348,26 @@ Para importarla:
 ```bash
 # 1. Clonar el repositorio
 git clone <url-del-repo>
+cd <carpeta-del-repo>
 
-# 2. Configurar las variables de entorno (ver sección de configuración)
+# 2. Levantar la base de datos (desde la raíz; define DB_PASSWORD en el .env creado)
+cp .env.example .env
+docker compose up --wait db
 
-# 3. Ejecutar
-mvn spring-boot:run
+# 3. Variables de entorno (en la configuración de ejecución del IDE o en la terminal).
+#    DB_USERNAME y DB_PASSWORD deben coincidir con los del .env de la raíz.
+export DB_URL=jdbc:postgresql://localhost:5432/gestion_pedidos
+export DB_USERNAME=postgres
+export DB_PASSWORD=<la-misma-que-en-.env>
 
-# 4. Probar endpoints con Postman o Swagger
+# 4. Ejecutar desde Backend/ (Flyway crea el esquema y el catálogo de ejemplo en el primer arranque)
+cd Backend
+./mvnw spring-boot:run      # o: mvn spring-boot:run
+
+# 5. Probar endpoints con Postman o Swagger
 ```
 
-> **Alternativa con Docker**: desde la raíz del repositorio puedes levantar todo el sistema (base de datos + backend + frontend) con `docker compose up --build`, o solo la base de datos con `docker compose up --wait db` y arrancar el backend desde el IDE. Ver el README de la raíz. Recuerda que el backend del IDE y el de Docker no pueden compartir el puerto 8080 a la vez.
+> **Alternativa con Docker**: desde la raíz del repositorio puedes levantar todo el sistema (base de datos + backend + frontend) con `docker compose up --build`, o solo la base de datos con `docker compose up --wait db` y arrancar el backend desde el IDE. Ver el README de la raíz. Recuerda que el backend del IDE y el de Docker no pueden compartir el puerto 8080 a la vez. `Backend/Dockerfile` compila el jar con Maven en una primera etapa y ejecuta solo el JRE 17 con un usuario sin privilegios.
 
 ---
 
@@ -376,9 +406,13 @@ Las dos consultas de agregación (`@Query` con `SUM`/`COUNT` y `GROUP BY`) se pr
 
 `PedidoIntegrationTest` levanta la aplicación completa en un puerto aleatorio y ejecuta el flujo real de crear categoría → producto → terminal → pedido vía peticiones HTTP reales, contra PostgreSQL con Testcontainers — sin ningún mock de por medio. Confirma que todas las capas encajan entre sí, incluido el cálculo real del total del pedido.
 
+### Test del validador de configuración
+
+`MotorPostgresqlValidatorTest` (4 tests) comprueba que `MotorPostgresqlValidator` rechaza una URL que no sea de PostgreSQL con un mensaje claro y que no rompe el arranque cuando `DB_URL` no está definida.
+
 ### Perfil de test aislado
 
-Cuatro clases usan el perfil `test` (`@ActiveProfiles("test")`): `GestionDePedidosApiApplicationTests`, `PedidoIntegrationTest`, `PedidoRepositoryTest` y `ProductoRepositoryTest`. Todas comparten `src/test/resources/application-test.properties` (`spring.jpa.hibernate.ddl-auto=create`), y la base de datos PostgreSQL la levanta Testcontainers (`postgres:17-alpine`, versiones gestionadas por el BOM de Spring Boot) mediante una configuración `@TestConfiguration` con `@ServiceConnection`. La suite completa no depende de una base de datos local ni de variables de entorno: solo necesita el demonio de Docker en marcha, y es reproducible en cualquier máquina.
+Cinco clases usan el perfil `test` (`@ActiveProfiles("test")`): `GestionDePedidosApiApplicationTests`, `PedidoIntegrationTest`, `PedidoRepositoryTest`, `ProductoRepositoryTest` y `MigracionFlywayTest` (esta última con una excepción, ver más abajo). Todas comparten `src/test/resources/application-test.properties` (`spring.jpa.hibernate.ddl-auto=create`, `spring.flyway.enabled=false` y `spring.test.database.replace=none`, para que `@DataJpaTest` no sustituya PostgreSQL por H2), y la base de datos PostgreSQL la levanta Testcontainers (`postgres:17-alpine`, versiones gestionadas por el BOM de Spring Boot) mediante una configuración `@TestConfiguration` con `@ServiceConnection`. La suite completa no depende de una base de datos local ni de variables de entorno: solo necesita el demonio de Docker en marcha, y es reproducible en cualquier máquina.
 
 La excepción es `MigracionFlywayTest`: reactiva `spring.flyway.enabled=true` y `ddl-auto=validate` con `@SpringBootTest(properties=...)` para comprobar que V1+V2 migran y validan contra un contenedor vacío. No puede hacerlo en el perfil compartido porque la V2 siembra el catálogo y chocaría con los datos de los tests.
 

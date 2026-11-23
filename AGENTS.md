@@ -2,7 +2,7 @@
 Sistema de gestión de pedidos para terminales de autoservicio (Terminal → Cocina → Recogida). Backend didáctico (comentarios explicativos abundantes); frontend simple, sin estado global ni autenticación.
 
 ## Stack y estructura
-- **Backend** (`Backend/`): Java 17, Spring Boot 4.1.0, JPA + PostgreSQL (dev) / Testcontainers (test), Lombok. Paquetes bajo `gestionpedidos/`: `model`, `repository`, `service`, `controller`, `dto`, `exception`.
+- **Backend** (`Backend/`): Java 17, Spring Boot 4.1, JPA + PostgreSQL con migraciones Flyway (dev) / Testcontainers (test), Lombok. Paquetes bajo `gestionpedidos/`: `model`, `repository`, `service`, `controller`, `dto`, `exception`.
 - **Frontend** (`Frontend/`): React 19 + Vite 8 + React Router 7 + `sonner`. Sin Redux/Context: estado en hooks + props. Carpetas: `api`, `components`, `hooks`, `pages`, `router`, `styles`, `utils`.
 
 ## Forma de las respuestas (backend) — no es uniforme
